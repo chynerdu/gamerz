@@ -1,4 +1,4 @@
-package com.example.gamerz
+package com.kwapad.gamerz
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity
