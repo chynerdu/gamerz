@@ -315,21 +315,6 @@ class GameDetailState extends State<GameDetail>
                 ],
               ),
             ))
-
-        // Divider(color: Colors.white, thickness: 2,),
-
-        //   ListView(children: <Widget>[
-        //   ListTile(
-        //     title: Text('Platon IV', style: AppTheme.displayDark),
-        //     subtitle: Text('Action'),
-        //     trailing: buildRating()
-        //   ,),
-        //   SizedBox(height: 20),
-        //   ListTile(
-        //     title: Text('Description', style: AppTheme.titleDarkBg),
-        //     subtitle: Text('Extreme Exorcism is a paranormal platformer where every move you make comes back to haunt you. Take on the role of Mae Barrons; an Extreme Exorcist with extreme measures. Her supernatural skills are called upon when everything and everyone else has failed to rid a haunted house of its ghostly presence.<br/><br/>Conventional methods won’t cut it with these ghosts. Instead, Mae comes armed with a deadly arsenal of ghost-busting weapons, from rocket launchers to razor sharp boomerangs.<br/>But these aren’t your average poltergeists. At the end of each round, a ghost appears and mimics your every move from the round before. The longer you survive the more extreme the game becomes.<br/><br/>Engage in non-stop ghost annihilation in 10 eerie areas of the haunted house – each room presenting its own hellish hazard. Brave the winds on the balcony and the fire in the kitchen, surviving for as long as you can. <br/><br/>With a devilish local multiplayer – you can play co-op or deathmatch modes with up to 3 of your friends, and with 50 unique challenges even the most daring Extreme Exorcist will be put to the test.'),
-        //   )
-        // ],)
       ],
     ));
   }
