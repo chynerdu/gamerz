@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "850767534789",
+    "project_id": "gamerzz-8d9a3",
+    "storage_bucket": "gamerzz-8d9a3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:850767534789:android:494464ad4137f092f56eac",
+        "android_client_info": {
+          "package_name": "com.kwapad.gamerz"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "850767534789-2ui62i66ku8g53vamanshj2neoce0q99.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kwapad.gamerz",
+            "certificate_hash": "d74fb7a4b9e26ad2161b3de5e733939954456ac6"
+          }
+        },
+        {
+          "client_id": "850767534789-56hn1edlkons3fhm4i3rhg5402qigflt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kwapad.gamerz",
+            "certificate_hash": "1cb0763a244773d872c0de7f0981de9f5c64a839"
+          }
+        },
+        {
+          "client_id": "850767534789-t44mfb1i9451ivour14mma61ijeshjt2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDM_3UZJmKJNLKNCQcbfjqmMtKJpNfUtGI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "850767534789-t44mfb1i9451ivour14mma61ijeshjt2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "850767534789-nb7ukh4upct2hhf4n0ndd0ic19jiaa32.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kwapad.gamerz"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

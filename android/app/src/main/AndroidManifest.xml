@@ -1,22 +1,43 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.kwapad.gamerz">
-    <!-- io.flutter.app.FlutterApplication is an android.app.Application that
-         calls FlutterMain.startInitialization(this); in its onCreate method.
-         In most cases you can leave this as-is, but you if you want to provide
-         additional functionality it is fine to subclass or reimplement
-         FlutterApplication and put your custom class here. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+   
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- <application android:usesCleartextTraffic="true"/> -->
     <application
-        android:name="io.flutter.app.FlutterApplication"
         android:label="gamerz"
+        android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+         <meta-data
+        android:name="com.google.android.gms.version"
+        android:value="@integer/google_play_services_version" />
+
+
+
+    <meta-data
+        android:name="com.google.firebase.analytics.APPLICATION_ID"
+        android:value="@string/google_app_id" />
+
+         <activity
+        android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
+        android:excludeFromRecents="true"
+        android:exported="false"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity
             android:name=".MainActivity"
+            android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="high_important_channel4" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -27,5 +48,30 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+            <!-- <service 
+android:name="com.google.firebase.components.ComponentDiscoveryService" 
+android:directBootAware="true" android:exported="true" >
+
+<meta-data android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingRegistrar" 
+android:value="com.google.firebase.components.ComponentRegistrar" />
+
+<meta-data android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar" 
+ android:value="com.google.firebase.components.ComponentRegistrar" />
+     <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+    </intent-filter>
+</service> -->
     </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility?hl=en and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
 </manifest>
