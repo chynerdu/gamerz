@@ -3,9 +3,15 @@ import 'package:flutter/material.dart';
 class GamerzElevatedButton extends StatelessWidget {
   final String label;
   final dynamic onPressed;
+  final Color? labelColor;
+  final Color? backgroundColor;
 
   const GamerzElevatedButton(
-      {super.key, required this.label, required this.onPressed});
+      {super.key,
+      required this.label,
+      required this.onPressed,
+      this.labelColor,
+      this.backgroundColor});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +20,7 @@ class GamerzElevatedButton extends StatelessWidget {
         child: ElevatedButton(
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
+              backgroundColor: backgroundColor ?? Colors.white,
               elevation: 4,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -22,9 +28,9 @@ class GamerzElevatedButton extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 16,
-                  color: Colors.black,
+                  color: labelColor ?? Colors.black,
                   fontWeight: FontWeight.w700),
             )));
   }

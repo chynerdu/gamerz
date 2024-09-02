@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
 
+import '../../app-providers/auth_provider.dart';
+import '../../app-providers/games.provider.dart';
 import '../../commom/gamerz-wrapper.dart';
 import '../../commom/theming.dart';
 import '../../commom/ui/gamerzRaisedButton.dart';
 import '../../commom/ui/gamerzTextButton.dart';
 import '../../commom/ui/textInput.dart';
 import '../../data-models.dart/register.dart';
+import '../../helpers/socialAuths.dart';
+import '../home/tabs.dart';
 import 'login.dart';
+import 'register_2.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -24,6 +32,8 @@ class _Register extends State<Register> {
   TextEditingController confirmPasswordController = TextEditingController();
   final RegisterModel registerModel = RegisterModel();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final SocialAuth socialAuth = SocialAuth();
 
   toggleObscurePassword() {
     obscurePassword = !obscurePassword;
@@ -39,8 +49,52 @@ class _Register extends State<Register> {
     (context as Element).visitChildren(rebuild);
   }
 
+  Future<void> _handleGoogleSignup(authProvider, context) async {
+    try {
+      dynamic token = await socialAuth.googleAuth(
+          authProvider: authProvider, context: context);
+      if (token != null) {
+        await socialregister(
+            token: token,
+            type: 'google',
+            authProvider: authProvider,
+            context: context);
+      } else {
+        SmartDialog.showToast('Registration failed',
+            displayTime: const Duration(seconds: 3));
+      }
+    } catch (e) {
+      print('sign in error ${e.toString()}');
+    }
+  }
+
+  socialregister(
+      {required UserAuthProvider authProvider,
+      required type,
+      required token,
+      required context}) async {
+    try {
+      SmartDialog.showLoading();
+      await authProvider.socialregister(type: type, token: token);
+      goToMain(context);
+      SmartDialog.dismiss();
+    } catch (e) {
+      SmartDialog.dismiss();
+
+      SmartDialog.showToast(e as String,
+          displayTime: const Duration(seconds: 3));
+    }
+  }
+
+  goToMain(context) {
+    final provider = Provider.of<AllGamesProvider>(context, listen: false);
+    Navigator.push(
+        context, MaterialPageRoute(builder: (_) => NavigationTabs(provider)));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<UserAuthProvider>(context);
     return GamerzWrapper(
         child: Scaffold(
             backgroundColor: Colors.transparent,
@@ -63,8 +117,10 @@ class _Register extends State<Register> {
                                 style: GamerzTheme.headerStyle),
                             GamerzTextButton(
                               label: 'Login',
-                              onPressed: () => Navigator.push(context,
-                                  MaterialPageRoute(builder: (_) => Login())),
+                              onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const Login())),
                             )
                           ],
                         ),
@@ -133,20 +189,6 @@ class _Register extends State<Register> {
                               ],
                             )),
                         const SizedBox(height: 36),
-                        const Text('Username', style: GamerzTheme.labelStyle),
-                        const SizedBox(height: 10),
-                        GamerzTextInput(
-                          keyboard: KeyboardType.EMAIL,
-                          hintText: 'Enter a username',
-                          validator: (String? value) {
-                            if (value == '') return 'Username cannot be empty';
-                          },
-                          onSaved: (String? value) {
-                            registerModel.username = value;
-                          },
-                          prefix: SvgPicture.asset('assets/icons/at.svg'),
-                        ),
-                        const SizedBox(height: 36),
                         const Text('Email Address',
                             style: GamerzTheme.labelStyle),
                         const SizedBox(height: 10),
@@ -167,21 +209,27 @@ class _Register extends State<Register> {
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: GamerzElevatedButton(
-                        label: 'Continue',
+                        label: 'Set Password',
                         onPressed: () {
                           if (!_formKey.currentState!.validate()) {
                             return;
                           }
                           _formKey.currentState!.save();
 
-                          // Navigator.push(
-                          //     context,
-                          //     MaterialPageRoute(
-                          //         builder: (context) => RegisterFinal(
-                          //             previousData: registerModel)));
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => RegisterFinal(
+                                      previousData: registerModel)));
                         }),
                   ),
-                  const SizedBox(height: 20)
+                  const SizedBox(height: 36),
+                  const Text('Or'),
+                  const SizedBox(height: 20),
+                  GamerzGoogleElevatedButton(
+                    label: 'Signup With Google',
+                    onPressed: () => _handleGoogleSignup(authProvider, context),
+                  )
                 ])))));
   }
 }

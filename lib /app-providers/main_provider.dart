@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
+import '../service/local-storage.dart';
 
-// class GamerzAppProvider with 
-// ChangeNotifier, 
-// AllGamesProvider{}
+LocalStorage localStorage = LocalStorage();

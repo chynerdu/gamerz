@@ -20,15 +20,15 @@ class CommentModel {
 }
 
 class Result {
-  List<Data>? data;
+  List<CommentData>? data;
 
   Result({this.data});
 
   Result.fromJson(Map<String, dynamic> json) {
     if (json['data'] != null) {
-      data = <Data>[];
+      data = <CommentData>[];
       json['data'].forEach((v) {
-        data!.add(new Data.fromJson(v));
+        data!.add(new CommentData.fromJson(v));
       });
     }
   }
@@ -42,7 +42,7 @@ class Result {
   }
 }
 
-class Data {
+class CommentData {
   String? sId;
   String? message;
   String? updatedAt;
@@ -51,7 +51,7 @@ class Data {
   int? likes;
   List<Media>? media;
 
-  Data(
+  CommentData(
       {this.sId,
       this.message,
       this.updatedAt,
@@ -60,7 +60,7 @@ class Data {
       this.likes,
       this.media});
 
-  Data.fromJson(Map<String, dynamic> json) {
+  CommentData.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
     message = json['message'];
     updatedAt = json['updatedAt'];

@@ -2,9 +2,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:provider/provider.dart';
+import 'app-providers/auth_provider.dart';
 import 'app-providers/games.provider.dart';
 import 'app-providers/main_provider.dart';
+import 'app-providers/post_provider.dart';
 import 'commom/custom-colors.dart';
 import 'screens/home.dart';
 import 'screens/home/tabs.dart';
@@ -24,8 +27,14 @@ void main() async {
   // await Firebase.initializeApp();
   await Firebase.initializeApp().whenComplete(() {
     print('app initialized >>>>');
-    runApp(ChangeNotifierProvider(
-        create: (context) => AllGamesProvider(),
+    runApp(MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AllGamesProvider>(
+              create: (_) => AllGamesProvider()),
+          ChangeNotifierProvider<PostProvider>(create: (_) => PostProvider()),
+          ChangeNotifierProvider<UserAuthProvider>(
+              create: (_) => UserAuthProvider())
+        ],
         child: new MaterialApp(
           home: new MyApp(),
         )));
@@ -169,6 +178,8 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Gamerz',
+      navigatorObservers: [FlutterSmartDialog.observer],
+      builder: FlutterSmartDialog.init(),
       theme: ThemeData(
           brightness: Brightness.dark,
           fontFamily: 'BigSpace',

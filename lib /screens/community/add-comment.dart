@@ -3,18 +3,23 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'dart:developer';
 import 'dart:io';
 
+import '../../app-providers/post_provider.dart';
 import '../../commom/avatar.dart';
+import '../../commom/gamerz-wrapper.dart';
 import '../../commom/theming.dart';
 import '../../commom/ui/gamerzRaisedButton.dart';
+import '../../service/config.dart';
 import '../../service/local-storage.dart';
 import 'for-you/for-you.dart';
 
 class AddComment extends StatefulWidget {
   PostBody body;
-  AddComment({super.key, required this.body});
+  final PostProvider postProvider;
+  AddComment({super.key, required this.body, required this.postProvider});
 
   @override
   State<AddComment> createState() => _AddCommentState();
@@ -96,7 +101,7 @@ class _AddCommentState extends State<AddComment> {
       }; // ignore this headers if there is no authentication
 
       // string to uri
-      var uri = Uri.parse('98yyuuiiiee');
+      var uri = Uri.parse('${Config.baseUrl}/comment/${widget.body.id}/create');
 
       // create multipart request
       var request = new http.MultipartRequest("POST", uri);
@@ -142,99 +147,103 @@ class _AddCommentState extends State<AddComment> {
   }
 
   Widget build(BuildContext context) {
-    return Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          titleSpacing: 32,
-          leadingWidth: 24, //
-          leading: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: const Icon(Icons.arrow_back_rounded)),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: false,
-          title: const Text('Post', style: GamerzTheme.appbarStyle),
-        ),
-        body: SingleChildScrollView(
-            child: Column(
-          children: [
-            PostContainer(
-                id: widget.body.id,
-                content: widget.body.content,
-                addingComment: true,
-                commentCounts: widget.body.commentCounts,
-                likes: widget.body.likes,
-                author: widget.body.author,
-                date: widget.body.date,
-                image: widget.body.image),
-            Column(children: [
-              Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                      color: const Color(0xff313132),
-                      border:
-                          Border.all(color: const Color(0xFF747474), width: 1),
-                      borderRadius: BorderRadius.circular(12)),
-                  // width: MediaQuery.of(context).size.width * 0.8,
-                  child: Column(
-                    // crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Row(
+    final postProvider = Provider.of<PostProvider>(context);
+    return GamerzWrapper(
+        child: Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
+              titleSpacing: 32,
+              leadingWidth: 24, //
+              leading: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.arrow_back_rounded)),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              centerTitle: false,
+              title: const Text('Post', style: GamerzTheme.appbarStyle),
+            ),
+            body: SingleChildScrollView(
+                child: Column(
+              children: [
+                PostContainer(
+                    id: widget.body.id,
+                    content: widget.body.content,
+                    addingComment: true,
+                    commentCounts: widget.body.commentCounts,
+                    likes: widget.body.likes,
+                    author: widget.body.author,
+                    date: widget.body.date,
+                    image: widget.body.image,
+                    postProvider: widget.postProvider),
+                Column(children: [
+                  Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      decoration: BoxDecoration(
+                          color: const Color(0xff313132),
+                          border: Border.all(
+                              color: const Color(0xFF747474), width: 1),
+                          borderRadius: BorderRadius.circular(12)),
+                      // width: MediaQuery.of(context).size.width * 0.8,
+                      child: Column(
+                        // crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const AvatarSmall(
-                            img: "assets/icons/image1.png",
-                          ),
-                          const SizedBox(width: 26),
-                          Text('reply to @${widget.body.author}',
-                              style: const TextStyle(color: Colors.white)),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // GestureDetector(
-                          //     onTap: () => _getFromGallery(context),
-                          //     child: Container(
-                          //         child: Icon(
-                          //       Icons.image,
-                          //       size: 24,
-                          //       color: Colors.white,
-                          //     ))),
-                          Expanded(
-                              child: TextFormField(
-                            controller: messageController,
-                            maxLines: 3,
-                            style: const TextStyle(
-                                fontSize: 16, color: Color(0xFFFFFFFF)),
-                            decoration: InputDecoration(
-                              isDense: true,
-                              hintText: "Start typing",
-                              hintStyle: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w400,
-                                  color: Color(0xff989898)),
-                              contentPadding: const EdgeInsets.only(left: 16),
-                              border: OutlineInputBorder(
-                                borderSide: BorderSide.none,
-                                borderRadius: BorderRadius.circular(20),
+                          Row(
+                            children: [
+                              const AvatarSmall(
+                                img: "assets/icons/image1.png",
                               ),
-                            ),
-                          ))
+                              const SizedBox(width: 26),
+                              Text('reply to @${widget.body.author}',
+                                  style: const TextStyle(color: Colors.white)),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // GestureDetector(
+                              //     onTap: () => _getFromGallery(context),
+                              //     child: Container(
+                              //         child: Icon(
+                              //       Icons.image,
+                              //       size: 24,
+                              //       color: Colors.white,
+                              //     ))),
+                              Expanded(
+                                  child: TextFormField(
+                                controller: messageController,
+                                maxLines: 3,
+                                style: const TextStyle(
+                                    fontSize: 16, color: Color(0xFFFFFFFF)),
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  hintText: "Start typing",
+                                  hintStyle: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400,
+                                      color: Color(0xff989898)),
+                                  contentPadding:
+                                      const EdgeInsets.only(left: 16),
+                                  border: OutlineInputBorder(
+                                    borderSide: BorderSide.none,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                              ))
+                            ],
+                          ),
+                          // text
                         ],
-                      ),
-                      // text
-                    ],
-                  )),
-              const SizedBox(height: 16),
-              GamerzElevatedButtonSmall(
-                label: "Reply",
-                onPressed: () => submit(context),
-              )
-            ])
-          ],
-        )));
+                      )),
+                  const SizedBox(height: 16),
+                  GamerzElevatedButtonSmall(
+                    label: "Reply",
+                    onPressed: () => submit(context),
+                  )
+                ])
+              ],
+            ))));
   }
 }

@@ -1,8 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../app-providers/games.provider.dart';
+import '../app-providers/post_provider.dart';
 import '../commom/ui/gamerzTextButton.dart';
+import '../service/local-storage.dart';
 import '../service/socket-connection.dart';
 import 'authentication/login.dart';
 import 'game-listing.dart';
@@ -11,7 +14,8 @@ import 'popular.dart';
 
 class HomeScreen extends StatefulWidget {
   final AllGamesProvider provider;
-  HomeScreen(this.provider);
+  final bool isLoggedIn;
+  HomeScreen(this.provider, this.isLoggedIn);
   @override
   State<StatefulWidget> createState() {
     // TODO: implement createState
@@ -27,13 +31,13 @@ class HomeScreenState extends State<HomeScreen>
   bool index1visibility = false;
   bool index2visibility = false;
   SocketConnection socketConnection = SocketConnection();
+  LocalStorage localStorage = LocalStorage();
 
   @override
   void initState() {
     // WidgetsFlutterBinding.ensureInitialized();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       socketConnection.startConnection();
-      // initFirebase();
     });
 
     super.initState();
@@ -124,12 +128,12 @@ class HomeScreenState extends State<HomeScreen>
           title: const Text('Gamerz Zone'),
           actions: <Widget>[
             Visibility(
-                // visible: index1visibility,
+                visible: !widget.isLoggedIn,
                 child: GamerzTextButton(
-              label: 'Login',
-              onPressed: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => Login())),
-            ))
+                  label: 'Login',
+                  onPressed: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => Login())),
+                ))
           ],
           bottom: TabBar(
             onTap: (index) {

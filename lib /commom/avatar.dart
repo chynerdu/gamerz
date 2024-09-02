@@ -21,8 +21,8 @@ class AvatarBig extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 40,
-      height: 40,
+      width: 35,
+      height: 35,
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(40),
           image: DecorationImage(fit: BoxFit.cover, image: AssetImage(img))),
@@ -51,10 +51,10 @@ class AvatarSmall extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 16,
-      height: 16,
+      width: 12,
+      height: 12,
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           image: DecorationImage(fit: BoxFit.cover, image: AssetImage(img))),
     );
   }

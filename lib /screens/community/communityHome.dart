@@ -1,14 +1,22 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../app-providers/games.provider.dart';
+import '../../app-providers/post_provider.dart';
+import '../../commom/gamerz-wrapper.dart';
+import '../../commom/ui/gamerzTextButton.dart';
+import '../../service/local-storage.dart';
+import '../../service/socket-connection.dart';
+import '../authentication/login.dart';
 import 'for-you/feed.dart';
 import 'for-you/for-you.dart';
 
 class CommunityHomeScreen extends StatefulWidget {
   final AllGamesProvider provider;
-  CommunityHomeScreen(this.provider);
+  final bool isLoggedIn;
+  CommunityHomeScreen(this.provider, this.isLoggedIn);
   @override
   State<StatefulWidget> createState() {
     // TODO: implement createState
@@ -20,23 +28,38 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
     with SingleTickerProviderStateMixin {
   late TabController homeController;
   late FirebaseMessaging messaging;
+  SocketConnection socketConnection = SocketConnection();
   bool index0visibility = true;
   bool index1visibility = false;
   bool index2visibility = false;
+
   final ScrollController _scrollController = ScrollController();
+
   // SocketConnection socketConnection = SocketConnection();
 
   @override
   void initState() {
     // WidgetsFlutterBinding.ensureInitialized();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // socketConnection.startConnection();
-      // initFirebase();
+      getData();
+      socketConnection.startConnection(callBack: () => getData());
     });
 
     super.initState();
 
-    homeController = TabController(vsync: this, length: 3);
+    homeController = TabController(vsync: this, length: 2);
+  }
+
+  @override
+  void dispose() {
+    socketConnection.disconnectSocket();
+
+    super.dispose();
+  }
+
+  getData() async {
+    final postProvider = Provider.of<PostProvider>(context, listen: false);
+    await postProvider.getAllPosts();
   }
 
   initFirebase() async {
@@ -66,13 +89,6 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
     // );
 
     // print('User granted permission: ${settings.authorizationStatus}');
-  }
-
-  @override
-  void dispose() {
-    // socketConnection.disconnectSocket();
-
-    super.dispose();
   }
 
   getGames() async {
@@ -109,21 +125,21 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final postProvider = Provider.of<PostProvider>(context);
     return Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           title: const Text('Community'),
-          // actions: <Widget>[
-          //   Visibility(
-          //     visible: index1visibility,
-          //     child: IconButton(
-          //       color: Colors.black,
-          //       onPressed: () {},
-          //       icon: Icon(Icons.search,)
-          //       )
-          //   )
-          // ],
+          actions: <Widget>[
+            Visibility(
+                visible: !widget.isLoggedIn,
+                child: GamerzTextButton(
+                  label: 'Login',
+                  onPressed: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => Login())),
+                ))
+          ],
           bottom: TabBar(
             onTap: (index) {
               toggleVisibility(index);
@@ -181,9 +197,13 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
             ],
           ),
         ),
-        body: TabBarView(controller: homeController, children: <Widget>[
-          FeedForYou(mainScrollController: _scrollController),
-          Feed(),
-        ]));
+        body: GamerzWrapper(
+            child: TabBarView(controller: homeController, children: <Widget>[
+          FeedForYou(
+              mainScrollController: _scrollController,
+              postProvider: postProvider,
+              isLoggedIn: widget.isLoggedIn),
+          Feed(postProvider: postProvider),
+        ])));
   }
 }

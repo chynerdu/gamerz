@@ -51,6 +51,7 @@ class Data {
   List<Author>? author;
   int? likes;
   List<Media>? media;
+  bool? userLiked;
 
   Data(
       {this.sId,
@@ -62,7 +63,8 @@ class Data {
       this.comments,
       this.author,
       this.likes,
-      this.media});
+      this.media,
+      this.userLiked});
 
   Data.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -71,14 +73,15 @@ class Data {
     isApproved = json['isApproved'];
     message = json['message'];
     updatedAt = json['updatedAt'];
-    comments = json['comments'];
+    userLiked = json['userLiked'] ?? false;
+    comments = json['comments'] ?? 0;
     if (json['author'] != null) {
       author = <Author>[];
       json['author'].forEach((v) {
         author!.add(new Author.fromJson(v));
       });
     }
-    likes = json['likes'];
+    likes = json['likes'] ?? 0;
     if (json['media'] != null) {
       media = <Media>[];
       json['media'].forEach((v) {
@@ -95,6 +98,7 @@ class Data {
     data['isApproved'] = this.isApproved;
     data['message'] = this.message;
     data['updatedAt'] = this.updatedAt;
+    data['userLiked'] = this.userLiked;
     data['comments'] = this.comments;
     if (this.author != null) {
       data['author'] = this.author!.map((v) => v.toJson()).toList();

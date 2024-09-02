@@ -27,14 +27,14 @@ class GamerzTheme {
   );
 
   static const postStyle = TextStyle(
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.white,
     fontWeight: FontWeight.w500,
   );
 
   static const interactionStyle = TextStyle(
     color: Color(0xff9A9A9A),
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: FontWeight.w400,
   );
 

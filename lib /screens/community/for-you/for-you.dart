@@ -1,20 +1,35 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:jiffy/jiffy.dart';
-import 'package:photo_view/photo_view.dart';
 
+import '../../../app-providers/post_provider.dart';
 import '../../../commom/avatar.dart';
+import '../../../commom/bottomsheet.dart';
+import '../../../commom/custom-colors.dart';
 import '../../../commom/theming.dart';
+import '../../../commom/ui/gamerzRaisedButton.dart';
+import '../../../commom/ui/shimmers.dart';
 import '../../../data-models.dart/postModel.dart';
+import '../../../helpers/sizeManager.dart';
+import '../../../service/local-storage.dart';
+import '../../authentication/login.dart';
 import '../add-comment.dart';
 import '../new-post.dart';
 import '../single-post.dart';
 
 class FeedForYou extends StatefulWidget {
   ScrollController mainScrollController;
-  FeedForYou({required this.mainScrollController});
+  final bool isLoggedIn;
+  final PostProvider postProvider;
+
+  FeedForYou(
+      {required this.mainScrollController,
+      required this.postProvider,
+      required this.isLoggedIn});
   @override
   State<FeedForYou> createState() => _FeedForYouState();
 }
@@ -23,7 +38,10 @@ class _FeedForYouState extends State<FeedForYou> {
   @override
   void initState() {
     super.initState();
-    // _getAllPostsBloc.add(const GetAllPosts());
+  }
+
+  getData() async {
+    await widget.postProvider.getAllPosts();
   }
 
   @override
@@ -31,89 +49,51 @@ class _FeedForYouState extends State<FeedForYou> {
     super.dispose();
   }
 
-  List<Data> posts = [
-    Data(
-        sId: '3545454ffggg',
-        isActive: true,
-        isDeleted: true,
-        isApproved: true,
-        message: "Demo post",
-        comments: 1,
-        author: [
-          Author(sId: "343243254", firstName: "Kelvin", lastName: "Dust")
-        ],
-        likes: 4,
-        media: [
-          Media(
-              sId: '3434324',
-              mediaType: 'image',
-              isApproved: true,
-              isDeleted: false,
-              isDisabled: false,
-              postId: '3545454ffggg',
-              url:
-                  'http://res.cloudinary.com/deu3xnay0/image/upload/v1724183206/post_images/i9sufgrwczknc0zk7zej.jpg')
-        ]),
-    Data(
-        sId: '3545454ffggg',
-        isActive: true,
-        isDeleted: true,
-        isApproved: true,
-        message: "Another Demo post",
-        comments: 1,
-        author: [
-          Author(sId: "343243254", firstName: "Kelvin", lastName: "Dust")
-        ],
-        likes: 4,
-        media: [
-          Media(
-              sId: '3434324',
-              mediaType: 'image',
-              isApproved: true,
-              isDeleted: false,
-              isDisabled: false,
-              postId: '3545454ffggg',
-              url:
-                  'http://res.cloudinary.com/deu3xnay0/image/upload/v1724183206/post_images/agmomn54wgjbpqznx7bv.jpg')
-        ])
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: Colors.transparent,
         floatingActionButton: FloatingActionButton(
-            backgroundColor: Color.fromARGB(255, 213, 6, 75),
-            splashColor: Color.fromARGB(255, 180, 0, 60),
+            backgroundColor: const Color.fromARGB(255, 213, 6, 75),
+            splashColor: const Color.fromARGB(255, 180, 0, 60),
             onPressed: () => {
-                  Navigator.push(
-                      context, MaterialPageRoute(builder: (_) => NewPost()))
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const NewPost()))
                 },
-            child: Icon(Icons.edit_outlined, size: 30)),
-        body: Container(
-            child: ListView.separated(
-          itemCount: posts.length,
-          controller: widget.mainScrollController,
-          separatorBuilder: (context, index) {
-            return const Divider(
-                thickness: 1, height: 0, color: Color(0xFF747474));
-          },
-          itemBuilder: ((BuildContext context, index) {
-            Data post = posts[index];
-            return PostContainer(
-                id: post.sId as String,
-                content: "${post.message}",
-                commentCounts: post.comments as int,
-                likes: post.likes as int,
-                author: "${post.author![0].firstName}",
-                date: Jiffy('2024-08-20T19:46:54.583+00:00').fromNow(),
-                image: post.media!.isNotEmpty ? "${post.media![0].url}" : null);
-          }),
-        )));
+            child: const Icon(Icons.edit_outlined, size: 30)),
+        body: widget.postProvider.isLoadingAllPosts
+            ? ShimmerList()
+            : Container(
+                child: ListView.separated(
+                itemCount: widget.postProvider.allposts.length,
+                controller: widget.mainScrollController,
+                separatorBuilder: (context, index) {
+                  return const Divider(
+                      thickness: 1, height: 0, color: Color(0xFF747474));
+                },
+                itemBuilder: ((BuildContext context, index) {
+                  Data post = widget.postProvider.allposts[index];
+                  return PostContainer(
+                      id: post.sId as String,
+                      content: "${post.message}",
+                      commentCounts: post.comments as int,
+                      likes: post.likes as int,
+                      author: post.author != null
+                          ? "${post.author![0].firstName}"
+                          : '',
+                      date: Jiffy('2024-08-20T19:46:54.583+00:00').fromNow(),
+                      image: (post.media != null && post.media!.isNotEmpty)
+                          ? "${post.media![0].url}"
+                          : null,
+                      isLoggedIn: widget.isLoggedIn,
+                      userLiked: post.userLiked,
+                      postProvider: widget.postProvider);
+                }),
+              )));
   }
 }
 
-class PostContainer extends StatelessWidget {
+class PostContainer extends StatefulWidget {
   final String id;
   final bool? showFollow;
   final String content;
@@ -125,6 +105,9 @@ class PostContainer extends StatelessWidget {
   final bool? isSingle;
   final bool? isMyPost;
   final bool? addingComment;
+  final bool? isLoggedIn;
+  final bool? userLiked;
+  final PostProvider postProvider;
 
   const PostContainer(
       {required this.content,
@@ -134,21 +117,40 @@ class PostContainer extends StatelessWidget {
       this.showFollow = true,
       this.addingComment,
       this.isMyPost,
+      this.isLoggedIn,
+      this.userLiked,
       required this.commentCounts,
       required this.likes,
       required this.author,
-      required this.date});
+      required this.date,
+      required this.postProvider});
 
   @override
+  State<StatefulWidget> createState() {
+    // TODO: implement createState
+    return _PostContainerState();
+  }
+}
+
+class _PostContainerState extends State<PostContainer> {
+  bool userLiked = false;
+  int likes = 0;
+  @override
+  initState() {
+    userLiked = widget.userLiked ?? false;
+    likes = widget.likes;
+    super.initState();
+  }
+
   Widget _stackedHeads() => Container(
-      padding: EdgeInsets.only(left: 10),
+      padding: const EdgeInsets.only(left: 10),
       width: 48,
-      height: 16,
+      height: 12,
       child: ListView.builder(
           scrollDirection: Axis.horizontal,
-          itemCount: commentCounts > 3 ? 3 : commentCounts,
+          itemCount: widget.commentCounts > 3 ? 3 : widget.commentCounts,
           itemBuilder: (context, index) {
-            return Align(
+            return const Align(
               widthFactor: 0.3,
               child: CircleAvatar(
                 backgroundColor: Colors.white,
@@ -159,7 +161,36 @@ class PostContainer extends StatelessWidget {
             );
           }));
 
+  promptLogin(context, sizeManager, title) async {
+    await bottomSheetPopUp(
+        ctx: context,
+        height: MediaQuery.of(context).size.height * 0.85,
+        child: Container(
+          color: Colors.transparent,
+          child: UserLoginPromp(actionMessage: title),
+        ));
+  }
+
+  likePost(isLiked, context) async {
+    try {
+      setState(() {
+        userLiked = isLiked;
+        likes = isLiked
+            ? likes + 1
+            : likes > 0
+                ? likes - 1
+                : 0;
+      });
+
+      await widget.postProvider.likePost(widget.id, isLiked);
+    } catch (e) {
+      print('failed $e');
+    }
+  }
+
   Widget build(BuildContext context) {
+    SizeManager sizeManager = SizeManager(context);
+
     return IntrinsicHeight(
         child: Container(
       margin: const EdgeInsets.symmetric(vertical: 20),
@@ -172,15 +203,12 @@ class PostContainer extends StatelessWidget {
               Column(
                 children: [
                   UserWidget(
-                      isMyPost: isMyPost,
+                      isMyPost: widget.isMyPost,
                       child: const AvatarBig(
                         img: "assets/icons/image1.png",
                       ))
                 ],
               ),
-              // LayoutBuilder(
-              //     builder: (BuildContext context, BoxConstraints constraints) {
-              //   return
 
               const Expanded(
                   child: DottedLine(
@@ -203,12 +231,12 @@ class PostContainer extends StatelessWidget {
               //   width: 282,
               //   height: 0,
               // ),
-              addingComment == null || addingComment == false
+              widget.addingComment == null || widget.addingComment == false
                   ? _stackedHeads()
                   : const SizedBox.shrink()
             ],
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 5),
           Expanded(
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,114 +244,123 @@ class PostContainer extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FittedBox(
-                      fit: BoxFit.contain,
-                      child: SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.75,
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                  SizedBox(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
                               children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                            constraints: BoxConstraints(
-                                                maxWidth: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.2),
-                                            child: UserWidget(
-                                                isMyPost: isMyPost,
-                                                child: Text(author,
-                                                    style: const TextStyle(
-                                                      fontSize: 18,
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                    )))),
-                                        const SizedBox(width: 6),
-                                        SvgPicture.asset(
-                                          "assets/icons/filVerified.svg",
-                                        ),
-                                        const SizedBox(width: 10),
-                                        showFollow == true
-                                            ? Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 1),
-                                                decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            4),
-                                                    border: Border.all(
-                                                        color: Colors.white)),
-                                                child: const Text("Follow",
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                    )))
-                                            : const SizedBox.shrink()
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        Text(date,
-                                            style:
-                                                GamerzTheme.interactionStyle),
-                                        const SizedBox(width: 10),
-                                        const Icon(
-                                          Icons.more_horiz,
-                                          color: Colors.white,
-                                        )
-                                      ],
-                                    )
-                                  ],
+                                Container(
+                                    constraints: BoxConstraints(
+                                        maxWidth:
+                                            MediaQuery.of(context).size.width *
+                                                0.2),
+                                    child: UserWidget(
+                                        isMyPost: widget.isMyPost,
+                                        child: Text(widget.author,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w500,
+                                            )))),
+                                const SizedBox(width: 6),
+                                SvgPicture.asset("assets/icons/filVerified.svg",
+                                    width: 12),
+                                const SizedBox(width: 10),
+                                // widget.showFollow == true
+                                //     ? Container(
+                                //         padding: const EdgeInsets.symmetric(
+                                //             horizontal: 8, vertical: 1),
+                                //         decoration: BoxDecoration(
+                                //             borderRadius:
+                                //                 BorderRadius.circular(4),
+                                //             border: Border.all(
+                                //                 color: Colors.white)),
+                                //         child: const Text("Follow",
+                                //             style: TextStyle(
+                                //               fontSize: 12,
+                                //               color: Colors.white,
+                                //               fontWeight: FontWeight.w500,
+                                //             )))
+                                //     : const SizedBox.shrink()
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(widget.date,
+                                    style: GamerzTheme.interactionStyle),
+                                const SizedBox(width: 10),
+                                const Icon(
+                                  Icons.more_horiz,
+                                  color: Colors.white,
+                                )
+                              ],
+                            )
+                          ],
+                        ),
+                        const SizedBox(height: 7),
+                        GestureDetector(
+                            onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => SinglePost(
+                                            body: PostBody(
+                                              id: widget.id,
+                                              author: widget.author,
+                                              image: widget.image,
+                                              content: widget.content,
+                                              commentCounts:
+                                                  widget.commentCounts,
+                                              likes: likes,
+                                              date: widget.date,
+                                            ),
+                                          )),
                                 ),
-                                const SizedBox(height: 7),
-                                GestureDetector(
-                                    onTap: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) => SinglePost(
-                                                  body: PostBody(
-                                                      id: id,
-                                                      author: author,
-                                                      image: image,
-                                                      content: content,
-                                                      commentCounts:
-                                                          commentCounts,
-                                                      likes: likes,
-                                                      date: date))),
-                                        ),
-                                    child: Text(content,
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 3,
-                                        style: GamerzTheme.postStyle)),
-                              ]))),
-                  const SizedBox(height: 7),
-                  image != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: Image.network(
-                            fit: BoxFit.cover,
-                            image as String,
-                            // width: double.infinity,
-                            // height: MediaQuery.of(context).size.height * 0.4,
-                          ))
-                      : const SizedBox.shrink()
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                      padding: const EdgeInsets.only(right: 10),
+                                      child: Text(widget.content,
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 3,
+                                          style: GamerzTheme.postStyle)),
+                                  const SizedBox(height: 7),
+                                  widget.image != null
+                                      ? CachedNetworkImage(
+                                          imageUrl: widget.image as String,
+                                          imageBuilder:
+                                              (context, imageProvider) =>
+                                                  ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8.0),
+                                                      child: Image.network(
+                                                        fit: BoxFit.cover,
+                                                        widget.image as String,
+                                                        // width: double.infinity,
+                                                        // height: MediaQuery.of(context).size.height * 0.4,
+                                                      )),
+                                          placeholder: (context, url) =>
+                                              const SpinKitRipple(
+                                                  color: Color(0xffE91E63)),
+                                          errorWidget: (context, url, error) =>
+                                              const Visibility(
+                                                  visible: false,
+                                                  child: Icon(Icons.error)),
+                                        )
+                                      : const SizedBox.shrink()
+                                ])),
+                      ])),
                 ],
               ),
               const SizedBox(height: 17),
-              addingComment == null || addingComment == false
+              widget.addingComment == null || widget.addingComment == false
                   ? FittedBox(
                       child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -331,73 +368,80 @@ class PostContainer extends StatelessWidget {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            GestureDetector(
-                                onTap: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => SinglePost(
-                                              body: PostBody(
-                                                  id: id,
-                                                  author: author,
-                                                  image: image,
-                                                  content: content,
-                                                  commentCounts: commentCounts,
-                                                  likes: likes,
-                                                  date: date))),
-                                    ),
-                                child: Text("$commentCounts comments",
-                                    style: GamerzTheme.interactionStyle)),
-                            const SizedBox(width: 4),
-                            const Text(".",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xff9A9A9A),
-                                  fontWeight: FontWeight.w800,
-                                )),
-                            const SizedBox(width: 4),
-                            Text("$likes likes",
-                                style: GamerzTheme.interactionStyle)
-                          ],
-                        ),
-                        const SizedBox(
-                          width: 24,
-                        ),
-                        Row(
-                          children: [
-                            SvgPicture.asset(
-                              "assets/icons/filLike.svg",
-                            ),
-                            const SizedBox(width: 16),
-                            isSingle == null || isSingle == false
-                                ? GestureDetector(
-                                    onTap: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) => AddComment(
-                                                  body: PostBody(
-                                                      id: id,
-                                                      author: author,
-                                                      image: image,
-                                                      content: content,
-                                                      commentCounts:
-                                                          commentCounts,
-                                                      likes: likes,
-                                                      date: date))),
+                            widget.isSingle == null || widget.isSingle == false
+                                ? WidgetButton(
+                                    onPressed: () => widget.isLoggedIn != true
+                                        ? promptLogin(context, sizeManager,
+                                            'Sign in to join the conversation and reply to ${widget.author}\'s post.')
+                                        : Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    AddComment(
+                                                        body: PostBody(
+                                                          id: widget.id,
+                                                          author: widget.author,
+                                                          image: widget.image,
+                                                          content:
+                                                              widget.content,
+                                                          commentCounts: widget
+                                                              .commentCounts,
+                                                          likes: likes,
+                                                          date: widget.date,
+                                                        ),
+                                                        postProvider: widget
+                                                            .postProvider)),
+                                          ),
+                                    child: Wrap(
+                                      alignment: WrapAlignment.center,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      children: [
+                                        Text("${widget.commentCounts}",
+                                            style:
+                                                GamerzTheme.interactionStyle),
+                                        const SizedBox(width: 4),
+                                        SvgPicture.asset(
+                                          "assets/icons/comment.svg",
+                                          width: 15,
                                         ),
-                                    child: SvgPicture.asset(
-                                      "assets/icons/comment.svg",
+                                      ],
                                     ))
                                 : const SizedBox.shrink(),
+                            // Text("$commentCounts comments",
+                            //     style: GamerzTheme.interactionStyle)),
                             const SizedBox(width: 16),
-                            SvgPicture.asset(
-                              "assets/icons/filRepost.svg",
-                            ),
+                            WidgetButton(
+                                onPressed: () => widget.isLoggedIn != true
+                                    ? promptLogin(context, sizeManager,
+                                        'Sign in to join the conversation in ${widget.author}\'s post.')
+                                    : likePost(userLiked == true ? false : true,
+                                        context),
+                                child: Wrap(
+                                  alignment: WrapAlignment.center,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    Text("${likes}",
+                                        style: GamerzTheme.interactionStyle),
+                                    const SizedBox(width: 4),
+                                    SvgPicture.asset(
+                                      "assets/icons/filLike.svg",
+                                      color: userLiked == true
+                                          ? CustomColors.primaryColor
+                                          : Colors.white,
+                                      width: 15,
+                                    ),
+                                  ],
+                                )),
+                            // const SizedBox(width: 16),
+                            // SvgPicture.asset("assets/icons/filRepost.svg",
+                            //     width: 15),
                             const SizedBox(width: 16),
-                            SvgPicture.asset(
-                              "assets/icons/send.svg",
-                            ),
+
+                            SvgPicture.asset("assets/icons/send.svg",
+                                width: 15),
                           ],
-                        )
+                        ),
                       ],
                     ))
                   : const SizedBox.shrink()
@@ -443,4 +487,72 @@ class PostBody {
       this.isMyPost,
       this.addingComment,
       this.image});
+}
+
+class WidgetButton extends StatelessWidget {
+  final Widget child;
+  final dynamic onPressed;
+
+  const WidgetButton({super.key, required this.child, required this.onPressed});
+
+  Widget build(BuildContext context) {
+    return TextButton(
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.all(3),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          minimumSize: Size.zero,
+          backgroundColor: Colors.transparent,
+        ),
+        onPressed: onPressed,
+        child: child);
+  }
+}
+
+class UserLoginPromp extends StatelessWidget {
+  String? actionMessage;
+  String? actionSubMessage;
+
+  UserLoginPromp({super.key, this.actionMessage, this.actionSubMessage});
+  Widget build(BuildContext context) {
+    return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+            child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset('assets/appIcon.png', width: 100, height: 100),
+            const SizedBox(height: 70),
+            Container(
+                width: MediaQuery.of(context).size.width * 0.85,
+                child: Text(actionMessage ?? 'Hey there! Join the conversation',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 20))),
+            const SizedBox(height: 20),
+            Text(
+                actionSubMessage ??
+                    'When you log in you will be able to join the conversation',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.85,
+              child: GamerzElevatedButton(
+                  label: 'Login',
+                  onPressed: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const Login()))),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.85,
+              child: GamerzElevatedButton(
+                  labelColor: Colors.white,
+                  backgroundColor: CustomColors.primaryColor,
+                  label: 'Register',
+                  onPressed: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const Login()))),
+            )
+          ],
+        )));
+  }
 }

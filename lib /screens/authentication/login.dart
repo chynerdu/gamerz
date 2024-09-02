@@ -1,17 +1,18 @@
-import 'dart:developer';
-
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 
+import '../../app-providers/auth_provider.dart';
+import '../../app-providers/games.provider.dart';
 import '../../commom/gamerz-wrapper.dart';
 import '../../commom/theming.dart';
 import '../../commom/ui/gamerzRaisedButton.dart';
 import '../../commom/ui/gamerzTextButton.dart';
 import '../../commom/ui/textInput.dart';
 import '../../data-models.dart/login.dart';
+import '../../helpers/socialAuths.dart';
+import '../home/tabs.dart';
 import 'forgot_password.dart';
 import 'register.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -30,6 +31,7 @@ class _Login extends State<Login> {
   bool obscurePassword = true;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final GoogleSignIn googleSignIn = GoogleSignIn();
+  final SocialAuth socialAuth = SocialAuth();
 
   toggleObscurePassword() {
     obscurePassword = !obscurePassword;
@@ -45,53 +47,77 @@ class _Login extends State<Login> {
     (context as Element).visitChildren(rebuild);
   }
 
-  GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email'],
-  );
-
-  // Future<void> _handleGoogleSignIn() async {
-  //   try {
-  //     var account = await _googleSignIn.signIn();
-  //     print('Account $account');
-  //   } catch (error) {
-  //     print(error);
-  //   }
-  // }
-
-  Future<void> _handleGoogleSignIn() async {
+  Future<void> _handleGoogleSignIn(authProvider, context) async {
     try {
-      await _handleGoogleSignOut();
-      final GoogleSignInAccount? googleSignInAccount =
-          await googleSignIn.signIn();
-      print('sign in accoutn >> $googleSignInAccount');
-      final GoogleSignInAuthentication googleSignInAuthentication =
-          await googleSignInAccount!.authentication;
-      print('access token ${googleSignInAuthentication.accessToken}');
-      log('idToken ${googleSignInAuthentication.idToken.toString()}');
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleSignInAuthentication.accessToken,
-        idToken: googleSignInAuthentication.idToken,
-      );
-
-      final UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-      final User? user = userCredential.user;
-      print('user $user');
+      dynamic token = await socialAuth.googleAuth(
+          authProvider: authProvider, context: context);
+      if (token != null) {
+        await socialLogin(
+            token: token,
+            type: 'google',
+            authProvider: authProvider,
+            context: context);
+      } else {
+        SmartDialog.showToast('Login failed',
+            displayTime: const Duration(seconds: 3));
+      }
 
       // Use the user object for further operations or navigate to a new screen.
     } catch (e) {
-      print('sign in error ${e.toString()}');
+      print('sign in error $e');
+      SmartDialog.showToast('sign in error $e',
+          displayTime: const Duration(seconds: 3));
     }
   }
 
-  Future<void> _handleGoogleSignOut() async {
+  socialLogin(
+      {required UserAuthProvider authProvider,
+      required type,
+      required token,
+      required context}) async {
     try {
-      await googleSignIn.signOut();
-    } catch (e) {}
+      SmartDialog.showLoading(msg: 'Logging you in...');
+      await authProvider.socialLogin(type: type, token: token);
+      goToMain(context);
+      SmartDialog.dismiss();
+    } catch (e) {
+      SmartDialog.dismiss();
+      if (e == 'signup') {
+        SmartDialog.showToast(
+            'It looks like you don\'t have an account. Signup!',
+            displayTime: const Duration(seconds: 6));
+
+        Navigator.push(
+            context, MaterialPageRoute(builder: (_) => const Register()));
+      } else {
+        SmartDialog.showToast(e as String,
+            displayTime: const Duration(seconds: 3));
+      }
+    }
+  }
+
+  loginUser({required UserAuthProvider authProvider, required context}) async {
+    try {
+      SmartDialog.showLoading(msg: 'Logging you in...');
+      await authProvider.login(loginModel);
+      goToMain(context);
+      SmartDialog.dismiss();
+    } catch (e) {
+      SmartDialog.dismiss();
+      SmartDialog.showToast(e as String,
+          displayTime: const Duration(seconds: 3));
+    }
+  }
+
+  goToMain(context) {
+    final provider = Provider.of<AllGamesProvider>(context, listen: false);
+    Navigator.push(
+        context, MaterialPageRoute(builder: (_) => NavigationTabs(provider)));
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<UserAuthProvider>(context);
     return GamerzWrapper(
         child: Scaffold(
             backgroundColor: Colors.transparent,
@@ -116,7 +142,7 @@ class _Login extends State<Login> {
                               onPressed: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (_) => Register())),
+                                      builder: (_) => const Register())),
                             )
                           ],
                         ),
@@ -176,7 +202,7 @@ class _Login extends State<Login> {
                             onPressed: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) => ForgotPassword())),
+                                    builder: (_) => const ForgotPassword())),
                           ),
                         )
                       ]),
@@ -189,6 +215,8 @@ class _Login extends State<Login> {
                             return;
                           }
                           _formKey.currentState!.save();
+                          loginUser(
+                              authProvider: authProvider, context: context);
 
                           // context
                           //     .read<LoginBloc>()
@@ -198,11 +226,11 @@ class _Login extends State<Login> {
                         }),
                   ),
                   const SizedBox(height: 36),
-                  Text('Or'),
+                  const Text('Or'),
                   const SizedBox(height: 20),
                   GamerzGoogleElevatedButton(
                     label: 'Login With Google',
-                    onPressed: () => _handleGoogleSignIn(),
+                    onPressed: () => _handleGoogleSignIn(authProvider, context),
                   )
                 ])))));
   }

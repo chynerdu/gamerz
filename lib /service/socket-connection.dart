@@ -1,7 +1,9 @@
 // ignore: library_prefixes
+import 'package:provider/provider.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:socket_io_client/socket_io_client.dart';
 
+import '../app-providers/post_provider.dart';
 import 'config.dart';
 
 class SocketConnection {
@@ -16,12 +18,13 @@ class SocketConnection {
           .enableForceNewConnection()
           .build());
 
-  startConnection() {
+  startConnection({Function? callBack}) {
     print('connecting t socket');
     socket.connect();
     socket.on('connect', (data) {
       print('connected data ${socket.id}');
       joinGamerzRoom(socket);
+      joinCummninityRoom(socket);
       // join public room
     });
     socket.on('event', (data) => print(data));
@@ -40,6 +43,13 @@ class SocketConnection {
 
     socket.on('newGamerzPost', (data) {
       print('gamerz socket post added $data');
+    });
+
+    socket.on('newCommunityPost', (data) {
+      if (callBack != null) {
+        callBack();
+      }
+      print('community socket post added $data');
     });
 
     socket.onDisconnect((_) => print('disconnect'));
@@ -61,6 +71,10 @@ class SocketConnection {
 
   joinGamerzRoom(IO.Socket socket) {
     socket.emit('JoinGamerzPublic');
+  }
+
+  joinCummninityRoom(IO.Socket socket) {
+    socket.emit('JoinCommunity');
   }
 
   sendMessage({message, recipientId}) {
