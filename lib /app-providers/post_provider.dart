@@ -74,9 +74,6 @@ class PostProvider with ChangeNotifier {
         _isLoadingAllPosts = true;
         notifyListeners();
       }
-
-      print('Getting posts');
-
       // Determine the appropriate URL and headers based on token presence
       final token = await localStorage.getData(name: 'token');
       final url = Uri.parse(
@@ -115,13 +112,10 @@ class PostProvider with ChangeNotifier {
         _isLoadingMyPosts = true;
         notifyListeners();
       }
-
-      print('Getting my posts');
-
       // Determine the appropriate URL and headers based on token presence
       final token = await localStorage.getData(name: 'token');
       final url = Uri.parse(
-        '$baseUrl/post/min',
+        '$baseUrl/post/mine',
       );
 
       headers['Authorization'] = "Bearer $token";
@@ -136,8 +130,6 @@ class PostProvider with ChangeNotifier {
       // Update state with the fetched posts
       _myPosts = serialized.data ?? [];
       _isLoadingMyPosts = false;
-
-      print('Posts: $_myPosts');
       notifyListeners();
     } catch (error) {
       print('Error occurred fetching posts: $error');
@@ -191,35 +183,16 @@ class PostProvider with ChangeNotifier {
   }
 
   updateCommentList(newComment) {
-    print('all comments before update ${_allComments.length}');
     _allComments.add(newComment);
-    print('all comments after update ${_allComments.length}');
     notifyListeners();
   }
 
   likePost(id, isLiked) async {
     try {
-      // set active comment and clear initial comment if new id
-
-      // if (id != activeComment) {
-      //   _allComments = [];
-      //   _activeComment = id;
-      //   notifyListeners();
-      // }
-      //  show loading state on  initial load
-      // if (_allComments.isEmpty) {
-      //   _isLoadingComments = true;
-      // }
-      print('heeaders $isLiked');
       var token = await localStorage.getData(name: 'token');
       headers['Authorization'] = "Bearer $token";
       headers['Content-type'] = 'application/json';
-
-      print('liking post');
-
       notifyListeners();
-
-      //  call /all if user is logged in
       http.Response response = await http.post(
           Uri.parse('$baseUrl/like/$id/like'),
           body: jsonEncode({"isLiked": isLiked}),
@@ -229,15 +202,6 @@ class PostProvider with ChangeNotifier {
       if (response.statusCode != 201) {
         throw (decodedData['error'] ?? 'Something went wrong');
       }
-
-      print('post result ${decodedData}');
-
-      // var serialized = comment.Result.fromJson(decodedData['result']);
-
-      // _allComments = serialized.data ?? [];
-
-      // _isLoadingComments = false;
-      print('comments $_allComments');
       notifyListeners();
     } catch (error) {
       print('errror occured fetching posts $error');
@@ -247,55 +211,27 @@ class PostProvider with ChangeNotifier {
     }
   }
 
-  // getGameImages() async {
-  //   try {
-  //     if (_allGameImages.isEmpty) {
-  //       _isLoading = true;
-  //     }
+  deletePost(id) async {
+    try {
+      var token = await localStorage.getData(name: 'token');
+      headers['Authorization'] = "Bearer $token";
+      headers['Content-type'] = 'application/json';
+      notifyListeners();
+      http.Response response = await http
+          .delete(Uri.parse('$baseUrl/post/mine/$id'), headers: headers);
 
-  //     notifyListeners();
-
-  //     http.Response response =
-  //         await http.get(Uri.parse('$baseUrl/game/images'), headers: headers);
-
-  //     final decodedData = jsonDecode(response.body);
-
-  //     var serialized = GamesImages.fromJson(decodedData['result']);
-
-  //     _allGameImages = serialized.imagesData ?? [];
-  //     _isLoading = false;
-  //     notifyListeners();
-  //   } catch (error) {
-  //     print('errror occured 2212 $error');
-  //     _isLoading = false;
-  //     notifyListeners();
-  //     rethrow;
-  //   }
-  // }
-
-  // getAllGenres() async {
-  //   try {
-  //     if (_allGenres.isEmpty) {
-  //       _isLoading = true;
-  //     }
-  //     notifyListeners();
-
-  //     http.Response response =
-  //         await http.get(Uri.parse('$baseUrl/genre/all'), headers: headers);
-
-  //     final decodedData = jsonDecode(response.body);
-
-  //     var serialized = GameGenres.fromJson(decodedData['result']);
-
-  //     _allGenres = serialized.genreData ?? [];
-
-  //     _isLoading = false;
-  //     notifyListeners();
-  //   } catch (error) {
-  //     print('errror occured 2212 $error');
-  //     _isLoading = false;
-  //     notifyListeners();
-  //     rethrow;
-  //   }
-  // }
+      final decodedData = jsonDecode(response.body);
+      if (response.statusCode != 200) {
+        throw (decodedData['error'] ?? 'Something went wrong');
+      }
+      getAllPosts();
+      getMyPosts();
+      notifyListeners();
+    } catch (error) {
+      print('errror occured fetching posts $error');
+      _isLoadingComments = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
 }

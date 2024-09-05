@@ -1,10 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:jiffy/jiffy.dart';
+import 'package:provider/provider.dart';
 
 import '../../../app-providers/post_provider.dart';
 import '../../../commom/avatar.dart';
@@ -171,6 +173,12 @@ class _PostContainerState extends State<PostContainer> {
         ));
   }
 
+//  List<PopupMenuEntry<String>>  buildPostOptions() {
+//     return widget.isMyPost == true
+//         ? ['Delete', 'Share']
+//         : ['Share', 'Report Post'];
+//   }
+
   likePost(isLiked, context) async {
     try {
       setState(() {
@@ -185,6 +193,32 @@ class _PostContainerState extends State<PostContainer> {
       await widget.postProvider.likePost(widget.id, isLiked);
     } catch (e) {
       print('failed $e');
+    }
+  }
+
+  void handleClick(String value, context, id) {
+    switch (value) {
+      case 'Delete':
+        deletePost(id);
+        break;
+      case 'Report Post':
+        break;
+      case 'Share post':
+        break;
+    }
+  }
+
+  deletePost(id) async {
+    try {
+      SmartDialog.showLoading(msg: 'Deleting...');
+      final postProvider = Provider.of<PostProvider>(context);
+      await postProvider.deletePost(id);
+      SmartDialog.dismiss();
+      SmartDialog.showToast('Deleted');
+    } catch (e) {
+      SmartDialog.dismiss();
+      SmartDialog.showToast('Error occured',
+          displayTime: const Duration(seconds: 3));
     }
   }
 
@@ -295,10 +329,39 @@ class _PostContainerState extends State<PostContainer> {
                                 Text(widget.date,
                                     style: GamerzTheme.interactionStyle),
                                 const SizedBox(width: 10),
-                                const Icon(
-                                  Icons.more_horiz,
-                                  color: Colors.white,
+                                GestureDetector(
+                                  child: PopupMenuButton<String>(
+                                    icon: Icon(
+                                      Icons.more_horiz,
+                                      color: Colors.white,
+                                    ),
+                                    onSelected: (String choice) {
+                                      // c.updateTab(2);
+                                      handleClick(choice, context, widget.id);
+                                    },
+                                    itemBuilder: (BuildContext context) {
+                                      return widget.isMyPost == true
+                                          ? ['Share Post', 'Delete']
+                                              .map((String choice) {
+                                              return PopupMenuItem<String>(
+                                                value: choice,
+                                                child: Text(choice),
+                                              );
+                                            }).toList()
+                                          : ['Share Post', 'Report']
+                                              .map((String choice) {
+                                              return PopupMenuItem<String>(
+                                                value: choice,
+                                                child: Text(choice),
+                                              );
+                                            }).toList();
+                                    },
+                                  ),
                                 )
+                                // const Icon(
+                                //   Icons.more_horiz,
+                                //   color: Colors.white,
+                                // )
                               ],
                             )
                           ],

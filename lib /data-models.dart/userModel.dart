@@ -47,6 +47,7 @@ class Data {
   dynamic followers;
   dynamic username;
   dynamic following;
+  dynamic profileImage;
   int? iV;
 
   Data(
@@ -62,6 +63,7 @@ class Data {
       this.username,
       this.followers,
       this.following,
+      this.profileImage,
       this.iV});
 
   Data.fromJson(Map<String, dynamic> json) {
@@ -72,6 +74,7 @@ class Data {
     firstTimeLogin = json['firstTimeLogin'];
     firstName = json['first_name'];
     lastName = json['last_name'];
+    profileImage = json['profileImage'];
     email = json['email'];
     gender = json['gender'];
     username = json['username'];
@@ -93,6 +96,7 @@ class Data {
     data['last_name'] = lastName;
     data['email'] = email;
     data['gender'] = gender;
+    data['profileImage'] = profileImage;
     data['createdAt'] = createdAt;
     data['username'] = username;
     data['followers'] = followers;

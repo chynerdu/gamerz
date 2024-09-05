@@ -1,7 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:jiffy/jiffy.dart';
@@ -11,6 +13,7 @@ import '../../../app-providers/auth_provider.dart';
 import '../../../app-providers/post_provider.dart';
 import '../../../commom/avatar.dart';
 import '../../../commom/custom-colors.dart';
+import '../../../commom/gamerz-wrapper.dart';
 import '../../../commom/theming.dart';
 import '../../../commom/ui/shimmers.dart';
 import '../../../data-models.dart/userModel.dart';
@@ -32,7 +35,9 @@ class _ProfileState extends State<Profile> {
   // AuthRepository authRepository = AuthRepository();
   @override
   void initState() {
-    getProfile();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getProfile();
+    });
   }
 
   updateProfileState(state) {
@@ -102,9 +107,21 @@ class _ProfileState extends State<Profile> {
                     children: [
                       SizedBox(
                           width: MediaQuery.of(context).size.width * 0.15,
-                          child: const AvatarProfile(
-                            img: "assets/icons/fresh.jpg",
-                          )),
+                          child: profile.profileImage != null
+                              ? CachedNetworkImage(
+                                  imageUrl: profile.profileImage,
+                                  imageBuilder: (context, imageProvider) =>
+                                      AvatarNetworkProfile(
+                                          url: profile.profileImage),
+                                  placeholder: (context, url) =>
+                                      const SpinKitRipple(
+                                          color: Color(0xffE91E63)),
+                                  errorWidget: (context, url, error) =>
+                                      const Visibility(
+                                          visible: false,
+                                          child: Icon(Icons.error)),
+                                )
+                              : const SizedBox.shrink()),
                       const SizedBox(width: 24),
                       Expanded(
                           child: Row(
@@ -128,20 +145,22 @@ class _ProfileState extends State<Profile> {
                           )),
                           Container(
                               child: !widget.myProfile
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 1),
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                          border:
-                                              Border.all(color: Colors.white)),
-                                      child: const Text("Follow",
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w700,
-                                          )))
+                                  // TODO Change after implementing folow and follow back
+                                  ? SizedBox.shrink()
+                                  // Container(
+                                  //     padding: const EdgeInsets.symmetric(
+                                  //         horizontal: 8, vertical: 1),
+                                  //     decoration: BoxDecoration(
+                                  //         borderRadius:
+                                  //             BorderRadius.circular(4),
+                                  //         border:
+                                  //             Border.all(color: Colors.white)),
+                                  //     child: const Text("Follow",
+                                  //         style: TextStyle(
+                                  //           fontSize: 12,
+                                  //           color: Colors.white,
+                                  //           fontWeight: FontWeight.w700,
+                                  //         )))
                                   : Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 8, vertical: 1),
@@ -169,15 +188,16 @@ class _ProfileState extends State<Profile> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 8),
-                              Text(
-                                '${profile.following} following',
-                                style: GamerzTheme.followerCount,
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                '${profile.followers} followers',
-                                style: GamerzTheme.followerCount,
-                              ),
+                              // TODO uncomment after implementing follow and follow back
+                              // Text(
+                              //   '${profile.following} following',
+                              //   style: GamerzTheme.followerCount,
+                              // ),
+                              // const SizedBox(height: 10),
+                              // Text(
+                              //   '${profile.followers} followers',
+                              //   style: GamerzTheme.followerCount,
+                              // ),
                               const SizedBox(height: 10),
                               Row(
                                 children: [
@@ -304,7 +324,9 @@ class _ProfileState extends State<Profile> {
                 leading: Container(),
                 toolbarHeight: 0,
                 bottom: const TabBar(
-                  indicatorColor: Colors.white,
+                  labelColor: CustomColors.primaryColor,
+                  indicatorColor: CustomColors.primaryColor,
+                  unselectedLabelColor: Colors.white,
                   tabs: [
                     Text("Posts",
                         style: TextStyle(
@@ -321,13 +343,14 @@ class _ProfileState extends State<Profile> {
               ),
             ];
           },
-          body: const TabBarView(
+          body: const GamerzWrapper(
+              child: TabBarView(
             // controller: tabController,
             children: <Widget>[
               MyPosts(),
               Text('Replies'),
             ],
-          )),
+          ))),
     );
   }
 }
@@ -339,9 +362,9 @@ class MyPosts extends StatelessWidget {
   Widget build(BuildContext context) {
     final postProvider = Provider.of<PostProvider>(context);
     return postProvider.isLoadingMyPosts
-        ? postProvider.myPosts.isNotEmpty
-            ? ShimmerList()
-            : Container(
+        ? ShimmerList()
+        : postProvider.myPosts.isNotEmpty
+            ? Container(
                 child: ListView.separated(
                 // physics: NeverScrollableScrollPhysics(),
                 // shrinkWrap: true,
@@ -363,11 +386,12 @@ class MyPosts extends StatelessWidget {
                       image: post.media!.length > 0
                           ? "${post.media![0].url}"
                           : null,
-                      postProvider: postProvider);
+                      postProvider: postProvider,
+                      isMyPost: true);
                 }),
               ))
-        : const Center(
-            child: Text("You have not made any post yet",
-                style: TextStyle(color: (Colors.white))));
+            : const Center(
+                child: Text("You have not made any post yet",
+                    style: TextStyle(color: (Colors.white))));
   }
 }
