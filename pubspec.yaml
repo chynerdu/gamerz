@@ -71,6 +71,7 @@ dependencies:
   another_flushbar: ^1.10.24
   get: ^4.6.6
   upgrader: ^9.0.0
+  flutter_switch: ^0.3.2
 
 dev_dependencies:
   flutter_test:

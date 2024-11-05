@@ -41,12 +41,15 @@ class Data {
   bool? firstTimeLogin;
   String? firstName;
   String? lastName;
+  String? bio;
+  String? website;
   String? email;
   String? gender;
   String? createdAt;
   dynamic followers;
   dynamic username;
   dynamic following;
+  dynamic profileImage;
   int? iV;
 
   Data(
@@ -56,12 +59,15 @@ class Data {
       this.firstTimeLogin,
       this.firstName,
       this.lastName,
+      this.bio,
+      this.website,
       this.email,
       this.gender,
       this.createdAt,
       this.username,
       this.followers,
       this.following,
+      this.profileImage,
       this.iV});
 
   Data.fromJson(Map<String, dynamic> json) {
@@ -72,6 +78,9 @@ class Data {
     firstTimeLogin = json['firstTimeLogin'];
     firstName = json['first_name'];
     lastName = json['last_name'];
+    bio = json['bio'];
+    website = json['website'];
+    profileImage = json['profileImage'];
     email = json['email'];
     gender = json['gender'];
     username = json['username'];
@@ -91,8 +100,11 @@ class Data {
     data['firstTimeLogin'] = firstTimeLogin;
     data['first_name'] = firstName;
     data['last_name'] = lastName;
+    data['bio'] = bio;
+    data['website'] = website;
     data['email'] = email;
     data['gender'] = gender;
+    data['profileImage'] = profileImage;
     data['createdAt'] = createdAt;
     data['username'] = username;
     data['followers'] = followers;

@@ -1,10 +1,13 @@
+import 'package:another_flushbar/flushbar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:jiffy/jiffy.dart';
+import 'package:provider/provider.dart';
 
 import '../../../app-providers/post_provider.dart';
 import '../../../commom/avatar.dart';
@@ -15,14 +18,16 @@ import '../../../commom/ui/gamerzRaisedButton.dart';
 import '../../../commom/ui/shimmers.dart';
 import '../../../data-models.dart/postModel.dart';
 import '../../../helpers/sizeManager.dart';
-import '../../../service/local-storage.dart';
+
+import '../../../shared/report-post.dart';
 import '../../authentication/login.dart';
 import '../add-comment.dart';
 import '../new-post.dart';
+import '../profile/profile.dart';
 import '../single-post.dart';
 
 class FeedForYou extends StatefulWidget {
-  ScrollController mainScrollController;
+  final ScrollController mainScrollController;
   final bool isLoggedIn;
   final PostProvider postProvider;
 
@@ -35,8 +40,10 @@ class FeedForYou extends StatefulWidget {
 }
 
 class _FeedForYouState extends State<FeedForYou> {
+  final _scrollThreshold = 200;
   @override
   void initState() {
+    widget.mainScrollController.addListener(_onScroll);
     super.initState();
   }
 
@@ -44,8 +51,25 @@ class _FeedForYouState extends State<FeedForYou> {
     await widget.postProvider.getAllPosts();
   }
 
+  void _onScroll() async {
+    final extentAfter = widget.mainScrollController.position.extentAfter;
+    if (extentAfter < _scrollThreshold) {
+      if (int.tryParse(widget.postProvider.allposts.meta!.page!.toString()) !=
+          int.tryParse(widget.postProvider.allposts.meta!.total.toString())) {
+        int page = widget.postProvider.allposts.data == null
+            ? 1
+            : widget.postProvider.allposts.meta!.page! + 1;
+        if (!widget.postProvider.isLoadingAllPosts &&
+            widget.postProvider.allposts.meta!.nextPage != 0) {
+          await widget.postProvider.getAllPosts(page: page);
+        }
+      }
+    }
+  }
+
   @override
   void dispose() {
+    widget.mainScrollController.removeListener(_onScroll);
     super.dispose();
   }
 
@@ -56,32 +80,41 @@ class _FeedForYouState extends State<FeedForYou> {
         floatingActionButton: FloatingActionButton(
             backgroundColor: const Color.fromARGB(255, 213, 6, 75),
             splashColor: const Color.fromARGB(255, 180, 0, 60),
-            onPressed: () => {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const NewPost()))
-                },
+            onPressed: () async {
+              final result = await Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => const NewPost()));
+
+              if (result == true) {
+                setState(() {
+                  widget.postProvider.getAllPosts();
+                });
+              }
+            },
             child: const Icon(Icons.edit_outlined, size: 30)),
-        body: widget.postProvider.isLoadingAllPosts
+        body: widget.postProvider.isInitialLoadingAllPosts
             ? ShimmerList()
             : Container(
                 child: ListView.separated(
-                itemCount: widget.postProvider.allposts.length,
+                itemCount: widget.postProvider.allposts.data!.length,
                 controller: widget.mainScrollController,
                 separatorBuilder: (context, index) {
                   return const Divider(
                       thickness: 1, height: 0, color: Color(0xFF747474));
                 },
                 itemBuilder: ((BuildContext context, index) {
-                  Data post = widget.postProvider.allposts[index];
+                  Data post = widget.postProvider.allposts.data![index];
                   return PostContainer(
                       id: post.sId as String,
                       content: "${post.message}",
+                      authorId: post.author![0].sId as String,
                       commentCounts: post.comments as int,
+                      authorAvatar: post.author![0].profilePicture ??
+                          post.author![0].profilePicture,
                       likes: post.likes as int,
                       author: post.author != null
                           ? "${post.author![0].firstName}"
                           : '',
-                      date: Jiffy('2024-08-20T19:46:54.583+00:00').fromNow(),
+                      date: Jiffy(post.updatedAt).fromNow(),
                       image: (post.media != null && post.media!.isNotEmpty)
                           ? "${post.media![0].url}"
                           : null,
@@ -101,6 +134,8 @@ class PostContainer extends StatefulWidget {
   final int commentCounts;
   final int likes;
   final String author;
+  final String authorId;
+  final String? authorAvatar;
   final String date;
   final bool? isSingle;
   final bool? isMyPost;
@@ -116,12 +151,14 @@ class PostContainer extends StatefulWidget {
       this.isSingle,
       this.showFollow = true,
       this.addingComment,
+      required this.authorId,
       this.isMyPost,
       this.isLoggedIn,
       this.userLiked,
       required this.commentCounts,
       required this.likes,
       required this.author,
+      this.authorAvatar,
       required this.date,
       required this.postProvider});
 
@@ -167,9 +204,28 @@ class _PostContainerState extends State<PostContainer> {
         height: MediaQuery.of(context).size.height * 0.85,
         child: Container(
           color: Colors.transparent,
-          child: UserLoginPromp(actionMessage: title),
+          child: UserLoginPrompt(actionMessage: title),
         ));
   }
+
+  reportPost(context, sizeManager, id) async {
+    print('report post');
+    await bottomSheetPopUp(
+        ctx: context,
+        height: MediaQuery.of(context).size.height * 0.85,
+        child: Container(
+          color: Colors.transparent,
+          child: ReportPostPrompt(
+            id: id,
+          ),
+        ));
+  }
+
+//  List<PopupMenuEntry<String>>  buildPostOptions() {
+//     return widget.isMyPost == true
+//         ? ['Delete', 'Share']
+//         : ['Share', 'Report Post'];
+//   }
 
   likePost(isLiked, context) async {
     try {
@@ -182,9 +238,37 @@ class _PostContainerState extends State<PostContainer> {
                 : 0;
       });
 
-      await widget.postProvider.likePost(widget.id, isLiked);
+      await widget.postProvider
+          .likePost(id: widget.id, isLiked: isLiked, authorId: widget.authorId);
     } catch (e) {
       print('failed $e');
+    }
+  }
+
+  void handleClick(String value, context, id, sizeManager) {
+    switch (value) {
+      case 'Delete':
+        deletePost(id);
+        break;
+      case 'Report':
+        reportPost(context, sizeManager, id);
+        break;
+      case 'Share post':
+        break;
+    }
+  }
+
+  deletePost(id) async {
+    try {
+      SmartDialog.showLoading(msg: 'Deleting...');
+      final postProvider = Provider.of<PostProvider>(context);
+      await postProvider.deletePost(id);
+      SmartDialog.dismiss();
+      SmartDialog.showToast('Deleted');
+    } catch (e) {
+      SmartDialog.dismiss();
+      SmartDialog.showToast('Error occured',
+          displayTime: const Duration(seconds: 3));
     }
   }
 
@@ -204,8 +288,14 @@ class _PostContainerState extends State<PostContainer> {
                 children: [
                   UserWidget(
                       isMyPost: widget.isMyPost,
-                      child: const AvatarBig(
-                        img: "assets/icons/image1.png",
+                      authorId: widget.authorId,
+                      isLoggedIn: widget.isLoggedIn,
+                      author: widget.author,
+                      promptLogin: promptLogin,
+                      sizeManager: sizeManager,
+                      child: AvatarBig(
+                        isNetwork: widget.authorAvatar != null ? true : false,
+                        img: widget.authorAvatar ?? "assets/icons/image1.png",
                       ))
                 ],
               ),
@@ -260,6 +350,10 @@ class _PostContainerState extends State<PostContainer> {
                                             MediaQuery.of(context).size.width *
                                                 0.2),
                                     child: UserWidget(
+                                        author: widget.author,
+                                        authorId: widget.authorId,
+                                        promptLogin: promptLogin,
+                                        sizeManager: sizeManager,
                                         isMyPost: widget.isMyPost,
                                         child: Text(widget.author,
                                             style: const TextStyle(
@@ -295,32 +389,71 @@ class _PostContainerState extends State<PostContainer> {
                                 Text(widget.date,
                                     style: GamerzTheme.interactionStyle),
                                 const SizedBox(width: 10),
-                                const Icon(
-                                  Icons.more_horiz,
-                                  color: Colors.white,
+                                GestureDetector(
+                                  child: PopupMenuButton<String>(
+                                    icon: Icon(
+                                      Icons.more_horiz,
+                                      color: Colors.white,
+                                    ),
+                                    onSelected: (String choice) {
+                                      // c.updateTab(2);
+                                      widget.isLoggedIn != true
+                                          ? promptLogin(context, sizeManager,
+                                              'Sign in to join the conversation in ${widget.author}\'s post.')
+                                          : handleClick(choice, context,
+                                              widget.id, sizeManager);
+                                    },
+                                    itemBuilder: (BuildContext context) {
+                                      return widget.isMyPost == true
+                                          ? ['Share Post', 'Delete']
+                                              .map((String choice) {
+                                              return PopupMenuItem<String>(
+                                                value: choice,
+                                                child: Text(choice),
+                                              );
+                                            }).toList()
+                                          : ['Share Post', 'Report']
+                                              .map((String choice) {
+                                              return PopupMenuItem<String>(
+                                                value: choice,
+                                                child: Text(choice),
+                                              );
+                                            }).toList();
+                                    },
+                                  ),
                                 )
+                                // const Icon(
+                                //   Icons.more_horiz,
+                                //   color: Colors.white,
+                                // )
                               ],
                             )
                           ],
                         ),
                         const SizedBox(height: 7),
                         GestureDetector(
-                            onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => SinglePost(
-                                            body: PostBody(
-                                              id: widget.id,
-                                              author: widget.author,
-                                              image: widget.image,
-                                              content: widget.content,
-                                              commentCounts:
-                                                  widget.commentCounts,
-                                              likes: likes,
-                                              date: widget.date,
-                                            ),
-                                          )),
-                                ),
+                            onTap: () => widget.isLoggedIn != true
+                                ? promptLogin(context, sizeManager,
+                                    'Sign in to join the conversation in ${widget.author}\'s post.')
+                                : Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => SinglePost(
+                                              body: PostBody(
+                                                id: widget.id,
+                                                author: widget.author,
+                                                image: widget.image,
+                                                content: widget.content,
+                                                authorId: widget.authorId,
+                                                authorAvatar:
+                                                    widget.authorAvatar,
+                                                commentCounts:
+                                                    widget.commentCounts,
+                                                likes: likes,
+                                                date: widget.date,
+                                              ),
+                                            )),
+                                  ),
                             child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -381,6 +514,8 @@ class _PostContainerState extends State<PostContainer> {
                                                         body: PostBody(
                                                           id: widget.id,
                                                           author: widget.author,
+                                                          authorId:
+                                                              widget.authorId,
                                                           image: widget.image,
                                                           content:
                                                               widget.content,
@@ -456,11 +591,34 @@ class _PostContainerState extends State<PostContainer> {
 class UserWidget extends StatelessWidget {
   Widget child;
   bool? isMyPost;
+  bool? isLoggedIn;
+  String author;
+  String authorId;
+  Function promptLogin;
+  SizeManager sizeManager;
 
-  UserWidget({required this.child, this.isMyPost});
+  UserWidget(
+      {required this.child,
+      this.isMyPost,
+      this.isLoggedIn,
+      required this.author,
+      required this.authorId,
+      required this.promptLogin,
+      required this.sizeManager});
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(onTap: () => null, child: child);
+    return GestureDetector(
+        onTap: () => {
+              isLoggedIn != true
+                  ? promptLogin(context, sizeManager,
+                      'Sign in to view ${author}\'s profile.')
+                  : Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => Profile(
+                              myProfile: isMyPost ?? false, userId: authorId))),
+            },
+        child: child);
   }
 }
 
@@ -471,6 +629,8 @@ class PostBody {
   int commentCounts;
   int likes;
   String author;
+  String authorId;
+  String? authorAvatar;
   String date;
   bool? isSingle;
   bool? isMyPost;
@@ -482,6 +642,8 @@ class PostBody {
       required this.likes,
       required this.id,
       required this.author,
+      required this.authorId,
+      this.authorAvatar,
       required this.date,
       this.isSingle,
       this.isMyPost,
@@ -508,14 +670,28 @@ class WidgetButton extends StatelessWidget {
   }
 }
 
-class UserLoginPromp extends StatelessWidget {
+class UserLoginPrompt extends StatelessWidget {
   String? actionMessage;
   String? actionSubMessage;
 
-  UserLoginPromp({super.key, this.actionMessage, this.actionSubMessage});
+  UserLoginPrompt({super.key, this.actionMessage, this.actionSubMessage});
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: Colors.black,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            TextButton(
+              child: const Text(
+                'Close',
+                style: TextStyle(color: CustomColors.primaryColor),
+              ),
+              onPressed: () => Navigator.pop(context),
+            )
+          ],
+        ),
         body: Center(
             child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

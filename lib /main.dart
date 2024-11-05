@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:provider/provider.dart';
 import 'app-providers/auth_provider.dart';
 import 'app-providers/games.provider.dart';
@@ -21,9 +22,16 @@ import 'theme-data.dart';
 
 //   print("Handling a background message: ${message.messageId}");
 // }
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Handle background message
+  print("Handling a background message: ${message.messageId}");
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   // await Firebase.initializeApp();
   await Firebase.initializeApp().whenComplete(() {
     print('app initialized >>>>');
@@ -47,8 +55,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  // final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+  //     FlutterLocalNotificationsPlugin();
   @override
   void initState() {
     // provider.getAllGames();
@@ -59,7 +67,8 @@ class _MyAppState extends State<MyApp> {
 
   initFlutterLocalNotification() async {
     await FirebaseMessaging.instance.subscribeToTopic("newGamePost");
-
+    await FirebaseMessaging.instance.subscribeToTopic("gamerzCommunityPost");
+    final authProvider = Provider.of<UserAuthProvider>(context, listen: false);
     NotificationSettings settings =
         await FirebaseMessaging.instance.requestPermission(
       alert: true,
@@ -72,49 +81,62 @@ class _MyAppState extends State<MyApp> {
     );
 
     print('User granted permission: ${settings.authorizationStatus}');
-    // bool disableJobAlerts =
-    //     await localStorage.getBoolData(name: "jobAlertPush") ?? false;
+    bool disableNewPostAlert =
+        await localStorage.getBoolData(name: "disableNewPostAlert") ?? false;
     // bool disableNewMessageAlert =
     //     await localStorage.getBoolData(name: "newMessagePush") ?? false;
     // bool showAlertJobNearby =
     //     await localStorage.getBoolData(name: "showAlertJobNearby") ?? false;
 
-//     FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-//         FlutterLocalNotificationsPlugin();
+    FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+        FlutterLocalNotificationsPlugin();
 // // initialise the plugin. app_icon needs to be a added as a drawable resource to the Android head project
-//     const AndroidInitializationSettings initializationSettingsAndroid =
-//         AndroidInitializationSettings('gigplace');
-//     // final IOSInitializationSettings initializationSettingsIOS =
-//     //     IOSInitializationSettings(
-//     //         // onDidReceiveLocalNotification: onDidReceiveLocalNotification
-//     //         );
-//     // final MacOSInitializationSettings initializationSettingsMacOS =
-//     //     MacOSInitializationSettings();
-//     final InitializationSettings initializationSettings =
-//         InitializationSettings(
-//       android: initializationSettingsAndroid,
-//       // iOS: initializationSettingsIOS,
-//       // macOS: initializationSettingsMacOS
-//     );
-//     await flutterLocalNotificationsPlugin.initialize(
-//       initializationSettings,
-//     );
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('gamerz');
+    // final IOSInitializationSettings initializationSettingsIOS =
+    //     IOSInitializationSettings(
+    //         // onDidReceiveLocalNotification: onDidReceiveLocalNotification
+    //         );
+    // final MacOSInitializationSettings initializationSettingsMacOS =
+    //     MacOSInitializationSettings();
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+      android: initializationSettingsAndroid,
+      // iOS: initializationSettingsIOS,
+      // macOS: initializationSettingsMacOS
+    );
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+    );
 
-//     const AndroidNotificationChannel channel = AndroidNotificationChannel(
-//       'high_important_channel4', // id
-//       'High Importance Notifications4', // title
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'high_important_channel4', // id
+      'High Importance Notifications', // title
 
-//       importance: Importance.max,
-//     );
+      importance: Importance.max,
+    );
 
-//     await flutterLocalNotificationsPlugin
-//         .resolvePlatformSpecificImplementation<
-//             AndroidFlutterLocalNotificationsPlugin>()
-//         ?.createNotificationChannel(channel);
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
 
 //  init local notification before listening to message
     FirebaseMessaging.onMessage.listen((RemoteMessage event) async {
       print('mesage event received $event');
+      // await callNotifification(event, channel);
+      if (event.data['type'] == 'gamerz_community_post') {
+        if (!disableNewPostAlert &&
+            event.data['userId'] != authProvider.userData.sId) {
+          await callNotifification(event, channel);
+        } else if (event.data['type'] == 'gamerz_community_post' &&
+            disableNewPostAlert &&
+            event.data['userId'] == authProvider.userData.sId) {
+          print('disableNewPostAlert');
+        }
+      } else {
+        await callNotifification(event, channel);
+      }
 
       // if (event.data['type'] == 'job') {
       //   if (c.userData.value.role == "service-provider") {
@@ -154,7 +176,8 @@ class _MyAppState extends State<MyApp> {
           notification.body,
           NotificationDetails(
             android: AndroidNotificationDetails(
-              channel.id, channel.name,
+              channel.id,
+              channel.name,
               channelDescription: 'your channel description',
               priority: Priority.high,
               color: CustomColors.backgroundColors,
@@ -175,7 +198,8 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AllGamesProvider>(context);
-    return MaterialApp(
+
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Gamerz',
       navigatorObservers: [FlutterSmartDialog.observer],
@@ -193,7 +217,7 @@ class _MyAppState extends State<MyApp> {
           // Notice that the counter didn't reset back to zero; the application
           // is not restarted.
           primaryColor: Colors.black,
-          iconTheme: IconThemeData(color: Color(0xffE91E63))),
+          iconTheme: const IconThemeData(color: Color(0xffE91E63))),
       routes: {'/': (BuildContext context) => NavigationTabs(provider)},
     );
   }

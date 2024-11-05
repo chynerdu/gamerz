@@ -15,9 +15,25 @@ class AvatarProfile extends StatelessWidget {
   }
 }
 
+class AvatarNetworkProfile extends StatelessWidget {
+  final String url;
+  const AvatarNetworkProfile({super.key, required this.url});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(40),
+          image: DecorationImage(fit: BoxFit.cover, image: NetworkImage(url))),
+    );
+  }
+}
+
 class AvatarBig extends StatelessWidget {
+  final bool? isNetwork;
   final String img;
-  const AvatarBig({super.key, required this.img});
+  const AvatarBig({super.key, required this.img, this.isNetwork});
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -25,7 +41,11 @@ class AvatarBig extends StatelessWidget {
       height: 35,
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(40),
-          image: DecorationImage(fit: BoxFit.cover, image: AssetImage(img))),
+          image: DecorationImage(
+              fit: BoxFit.cover,
+              image: isNetwork == true
+                  ? NetworkImage(img) as ImageProvider<Object>
+                  : AssetImage(img) as ImageProvider<Object>)),
     );
   }
 }

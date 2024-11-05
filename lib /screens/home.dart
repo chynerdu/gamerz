@@ -1,9 +1,8 @@
+import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../app-providers/games.provider.dart';
-import '../app-providers/post_provider.dart';
 import '../commom/ui/gamerzTextButton.dart';
 import '../service/local-storage.dart';
 import '../service/socket-connection.dart';
@@ -18,7 +17,6 @@ class HomeScreen extends StatefulWidget {
   HomeScreen(this.provider, this.isLoggedIn);
   @override
   State<StatefulWidget> createState() {
-    // TODO: implement createState
     return HomeScreenState();
   }
 }
@@ -43,35 +41,6 @@ class HomeScreenState extends State<HomeScreen>
     super.initState();
 
     homeController = TabController(vsync: this, length: 3);
-  }
-
-  initFirebase() async {
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-    Firebase.initializeApp().whenComplete(() {
-      messaging = FirebaseMessaging.instance;
-      messaging.subscribeToTopic("newGamePost");
-      messaging.getToken().then((value) async {
-        print('firebase token $value');
-        // firebaseSubscribeModel.firebaseDeviceToken = value;
-
-        // var result = await subscribeToFirebase(firebaseSubscribeModel);
-        // print('subscribed $result');
-      });
-    });
-    Firebase.initializeApp();
-
-    // NotificationSettings settings = await messaging.requestPermission(
-    //   alert: true,
-    //   announcement: false,
-    //   badge: true,
-    //   carPlay: false,
-    //   criticalAlert: false,
-    //   provisional: false,
-    //   sound: true,
-    // );
-
-    // print('User granted permission: ${settings.authorizationStatus}');
   }
 
   @override

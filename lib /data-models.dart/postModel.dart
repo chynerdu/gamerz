@@ -10,17 +10,18 @@ class PostModel {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.result != null) {
-      data['result'] = this.result!.toJson();
+    if (result != null) {
+      data['result'] = result!.toJson();
     }
     return data;
   }
 }
 
 class Result {
-  List<Data>? data;
+  List<Data>? data = [];
+  MetaInfo? meta = MetaInfo(page: 0);
 
-  Result({this.data});
+  Result({this.data, this.meta});
 
   Result.fromJson(Map<String, dynamic> json) {
     if (json['data'] != null) {
@@ -29,6 +30,7 @@ class Result {
         data!.add(new Data.fromJson(v));
       });
     }
+    meta = json['meta'] != null ? new MetaInfo.fromJson(json['meta']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -92,20 +94,20 @@ class Data {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['_id'] = this.sId;
-    data['isActive'] = this.isActive;
-    data['isDeleted'] = this.isDeleted;
-    data['isApproved'] = this.isApproved;
-    data['message'] = this.message;
-    data['updatedAt'] = this.updatedAt;
-    data['userLiked'] = this.userLiked;
-    data['comments'] = this.comments;
-    if (this.author != null) {
-      data['author'] = this.author!.map((v) => v.toJson()).toList();
+    data['_id'] = sId;
+    data['isActive'] = isActive;
+    data['isDeleted'] = isDeleted;
+    data['isApproved'] = isApproved;
+    data['message'] = message;
+    data['updatedAt'] = updatedAt;
+    data['userLiked'] = userLiked;
+    data['comments'] = comments;
+    if (author != null) {
+      data['author'] = author!.map((v) => v.toJson()).toList();
     }
-    data['likes'] = this.likes;
-    if (this.media != null) {
-      data['media'] = this.media!.map((v) => v.toJson()).toList();
+    data['likes'] = likes;
+    if (media != null) {
+      data['media'] = media!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -146,14 +148,14 @@ class Comments {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['_id'] = this.sId;
-    data['isActive'] = this.isActive;
-    data['isDeleted'] = this.isDeleted;
-    data['isApproved'] = this.isApproved;
-    data['message'] = this.message;
-    data['updatedAt'] = this.updatedAt;
-    if (this.commenter != null) {
-      data['commenter'] = this.commenter!.map((v) => v.toJson()).toList();
+    data['_id'] = sId;
+    data['isActive'] = isActive;
+    data['isDeleted'] = isDeleted;
+    data['isApproved'] = isApproved;
+    data['message'] = message;
+    data['updatedAt'] = updatedAt;
+    if (commenter != null) {
+      data['commenter'] = commenter!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -163,20 +165,23 @@ class Author {
   String? sId;
   String? firstName;
   String? lastName;
+  String? profilePicture;
 
-  Author({this.sId, this.firstName, this.lastName});
+  Author({this.sId, this.firstName, this.lastName, this.profilePicture});
 
   Author.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
     firstName = json['first_name'];
     lastName = json['last_name'];
+    profilePicture = json['profileImage'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['_id'] = this.sId;
-    data['first_name'] = this.firstName;
-    data['last_name'] = this.lastName;
+    data['_id'] = sId;
+    data['first_name'] = firstName;
+    data['last_name'] = lastName;
+    data['profileImage'] = profilePicture;
     return data;
   }
 }
@@ -196,9 +201,9 @@ class Likes {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['_id'] = this.sId;
-    data['first_name'] = this.firstName;
-    data['last_name'] = this.lastName;
+    data['_id'] = sId;
+    data['first_name'] = firstName;
+    data['last_name'] = lastName;
     return data;
   }
 }
@@ -218,9 +223,9 @@ class Commenter {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['_id'] = this.sId;
-    data['first_name'] = this.firstName;
-    data['last_name'] = this.lastName;
+    data['_id'] = sId;
+    data['first_name'] = firstName;
+    data['last_name'] = lastName;
     return data;
   }
 }
@@ -261,15 +266,61 @@ class Media {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['_id'] = this.sId;
-    data['mediaType'] = this.mediaType;
-    data['isDisabled'] = this.isDisabled;
-    data['isDeleted'] = this.isDeleted;
-    data['isApproved'] = this.isApproved;
-    data['postId'] = this.postId;
-    data['url'] = this.url;
-    data['createdAt'] = this.createdAt;
-    data['__v'] = this.iV;
+    data['_id'] = sId;
+    data['mediaType'] = mediaType;
+    data['isDisabled'] = isDisabled;
+    data['isDeleted'] = isDeleted;
+    data['isApproved'] = isApproved;
+    data['postId'] = postId;
+    data['url'] = url;
+    data['createdAt'] = createdAt;
+    data['__v'] = iV;
+    return data;
+  }
+}
+
+class Meta {
+  Meta? meta;
+
+  Meta({this.meta});
+
+  Meta.fromJson(Map<String, dynamic> json) {
+    meta = json['meta'] != null ? new Meta.fromJson(json['meta']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    if (this.meta != null) {
+      data['meta'] = this.meta!.toJson();
+    }
+    return data;
+  }
+}
+
+class MetaInfo {
+  int? page;
+  int? limit;
+  int? total;
+  int? pages;
+  int? nextPage;
+
+  MetaInfo({this.page, this.limit, this.total, this.pages, this.nextPage});
+
+  MetaInfo.fromJson(Map<String, dynamic> json) {
+    page = json['page'];
+    limit = json['limit'];
+    total = json['total'];
+    pages = json['pages'];
+    nextPage = json['nextPage'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['page'] = this.page;
+    data['limit'] = this.limit;
+    data['total'] = this.total;
+    data['pages'] = this.pages;
+    data['nextPage'] = this.nextPage;
     return data;
   }
 }

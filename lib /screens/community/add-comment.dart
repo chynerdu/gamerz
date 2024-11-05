@@ -122,8 +122,10 @@ class _AddCommentState extends State<AddComment> {
       request.headers.addAll(headers);
       request.files.addAll(newList);
       //adding params
-      print("message is ${messageController.text}");
+
       request.fields['message'] = messageController.text;
+
+      request.fields['authorId'] = widget.body.authorId;
 
       // send
       var response = await request.send();
@@ -133,6 +135,7 @@ class _AddCommentState extends State<AddComment> {
       SmartDialog.dismiss();
 
       if (response.statusCode == 201 || response.statusCode == 200) {
+        widget.postProvider.getAllPosts();
         SmartDialog.showToast("posted");
         Navigator.pop(context);
       } else {
@@ -172,6 +175,8 @@ class _AddCommentState extends State<AddComment> {
                     commentCounts: widget.body.commentCounts,
                     likes: widget.body.likes,
                     author: widget.body.author,
+                    authorAvatar: widget.body.authorAvatar,
+                    authorId: widget.body.authorId,
                     date: widget.body.date,
                     image: widget.body.image,
                     postProvider: widget.postProvider),
@@ -213,6 +218,7 @@ class _AddCommentState extends State<AddComment> {
                               //     ))),
                               Expanded(
                                   child: TextFormField(
+                                maxLength: 200,
                                 controller: messageController,
                                 maxLines: 3,
                                 style: const TextStyle(

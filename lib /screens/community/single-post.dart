@@ -83,6 +83,7 @@ class _SinglePostState extends State<SinglePost> {
       request.headers.addAll(headers);
       //adding params
       request.fields['message'] = messageController.text;
+      request.fields['authorId'] = widget.body.authorId;
 
       // send
       var response = await request.send();
@@ -95,7 +96,7 @@ class _SinglePostState extends State<SinglePost> {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         // SmartDialog.showToast("posted");
-
+        postProvider.getAllPosts();
         var comment = responseData['result']['data'];
         postComment.CommentData newComment = postComment.CommentData(
             sId: comment['_id'],
@@ -123,51 +124,6 @@ class _SinglePostState extends State<SinglePost> {
       SmartDialog.dismiss();
     }
   }
-
-  // Data singlePost = Data(
-  //     sId: '3545454ffggg',
-  //     isActive: true,
-  //     isDeleted: true,
-  //     isApproved: true,
-  //     message: "Demo post",
-  //     comments: 1,
-  //     author: [Author(sId: "343243254", firstName: "Kelvin", lastName: "Dust")],
-  //     likes: 4,
-  //     media: [
-  //       Media(
-  //           sId: '3434324',
-  //           mediaType: 'image',
-  //           isApproved: true,
-  //           isDeleted: false,
-  //           isDisabled: false,
-  //           postId: '3545454ffggg',
-  //           url:
-  //               'http://res.cloudinary.com/deu3xnay0/image/upload/v1724183206/post_images/i9sufgrwczknc0zk7zej.jpg')
-  //     ]);
-
-  // List<comment.Data> comments = [
-  //   comment.Data(
-  //       likes: 2,
-  //       sId: '242354354fdg',
-  //       message: 'A comments',
-  //       updatedAt: DateTime.now().toString(),
-  //       replies: 2,
-  //       commenter: [
-  //         comment.Commenter(
-  //             firstName: 'Kelvin', lastName: 'Wale', sId: '34324234rewfsd')
-  //       ],
-  //       media: [
-  //         Media(
-  //             sId: '3434324',
-  //             mediaType: 'image',
-  //             isApproved: true,
-  //             isDeleted: false,
-  //             isDisabled: false,
-  //             postId: '3545454ffggg',
-  //             url:
-  //                 'http://res.cloudinary.com/deu3xnay0/image/upload/v1724183206/post_images/i9sufgrwczknc0zk7zej.jpg')
-  //       ])
-  // ];
 
   Widget build(BuildContext context) {
     final postProvider = Provider.of<PostProvider>(context);
@@ -202,6 +158,8 @@ class _SinglePostState extends State<SinglePost> {
                         commentCounts: widget.body.commentCounts,
                         likes: widget.body.likes,
                         author: widget.body.author,
+                        authorId: widget.body.authorId,
+                        authorAvatar: widget.body.authorAvatar,
                         date: widget.body.date,
                         image: widget.body.image,
                         postProvider: postProvider),
@@ -231,7 +189,7 @@ class _SinglePostState extends State<SinglePost> {
                                   postComment.CommentData userComments =
                                       postProvider.allComments[index];
                                   print(
-                                      'comments ${postProvider.allComments[index]}');
+                                      'comments ${postProvider.allComments.length}');
                                   return PostContainer(
                                       showFollow: false,
                                       id: userComments.sId as String,
@@ -245,6 +203,10 @@ class _SinglePostState extends State<SinglePost> {
                                           : 0,
                                       author:
                                           "${userComments.commenter![0].firstName}",
+                                      authorId: userComments.commenter![0].sId
+                                          as String,
+                                      authorAvatar:
+                                          "${userComments.commenter![0].profilePicture}",
                                       date: Jiffy(userComments.updatedAt)
                                           .fromNow(),
                                       postProvider: postProvider);

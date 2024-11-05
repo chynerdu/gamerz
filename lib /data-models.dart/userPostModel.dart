@@ -1,11 +1,11 @@
 import 'postModel.dart';
 
-class MyPostModel {
+class UserPostModel {
   Result? result;
 
-  MyPostModel({this.result});
+  UserPostModel({this.result});
 
-  MyPostModel.fromJson(Map<String, dynamic> json) {
+  UserPostModel.fromJson(Map<String, dynamic> json) {
     result =
         json['result'] != null ? new Result.fromJson(json['result']) : null;
   }

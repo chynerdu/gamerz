@@ -1,31 +1,34 @@
-import 'dart:convert';
 import 'dart:developer';
 
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:provider/provider.dart';
 
-import '../data-models.dart/game-images.dart';
-import '../data-models.dart/game.model.dart';
-import '../data-models.dart/games.dart';
-import '../data-models.dart/genre.dart';
 import '../data-models.dart/login.dart';
+import '../data-models.dart/postModel.dart';
 import '../data-models.dart/register.dart';
-import '../data-models.dart/single-game.model.dart';
 import '../service/config.dart';
 import '../data-models.dart/userModel.dart' as userDataModel;
-import '../service/local-storage.dart';
+import '../service/http-services.dart';
 import 'main_provider.dart';
+import 'post_provider.dart';
 
 class UserAuthProvider with ChangeNotifier {
   String _message = 'From Provider';
   final String baseUrl = Config.baseUrl;
+  HTTPInstances hTTPInstances = HTTPInstances();
 
   userDataModel.Data _userData = userDataModel.Data();
+  userDataModel.Data _otherUserData = userDataModel.Data();
 
   bool _isLoadingAuth = true;
 
   userDataModel.Data get userData {
     return _userData;
+  }
+
+  userDataModel.Data get otherUserData {
+    return _otherUserData;
   }
 
   bool get isLoadingAuth {
@@ -43,17 +46,9 @@ class UserAuthProvider with ChangeNotifier {
       notifyListeners();
 
       //  call /all if user is logged in
-      http.Response response = await http.post(Uri.parse('$baseUrl/auth/login'),
-          body: json.encode(loginData),
-          headers: {
-            'Content-type': 'application/json',
-          });
+      dynamic decodedData =
+          await hTTPInstances.httpPost(path: 'auth/login', data: loginData);
 
-      final decodedData = jsonDecode(response.body);
-      print('post result ${decodedData}');
-      if (response.statusCode != 200) {
-        throw (decodedData['error'] ?? 'Something went wrong');
-      }
       await localStorage.setData(
           name: 'token', data: decodedData['result']['token']);
       var serialized = userDataModel.Result.fromJson(decodedData['result']);
@@ -79,20 +74,17 @@ class UserAuthProvider with ChangeNotifier {
       notifyListeners();
 
       //  call /all if user is logged in
-      http.Response response = await http.post(
-          Uri.parse('$baseUrl/auth/socialSignIn'),
-          body: jsonEncode({type: type}),
-          headers: {'Content-type': 'application/json', 'socialtoken': token});
+      dynamic decodedData = await hTTPInstances.httpPost(
+        path: 'auth/socialSignIn',
+        data: {"type": type},
+        useCustomHeaders: true,
+        customHeaders: {
+          'Content-type': 'application/json',
+          'socialtoken': '$token'
+        },
+      );
 
-      final decodedData = jsonDecode(response.body);
-      print('post result ${decodedData}');
-      if (response.statusCode == 404) {
-        throw ('signup');
-      }
-
-      if (response.statusCode != 200) {
-        throw (decodedData['error'] ?? 'Something went wrong');
-      }
+      print('decord $decodedData');
       await localStorage.setData(
           name: 'token', data: decodedData['result']['token']);
       var serialized = userDataModel.Result.fromJson(decodedData['result']);
@@ -103,8 +95,12 @@ class UserAuthProvider with ChangeNotifier {
       print('logged in $_userData');
       notifyListeners();
     } catch (error) {
-      print('errror occured  $error');
       _isLoadingAuth = false;
+      print('errror occured  $error');
+      if (error.toString().contains('sign up')) {
+        throw ('signup');
+      }
+
       notifyListeners();
       rethrow;
     }
@@ -117,18 +113,12 @@ class UserAuthProvider with ChangeNotifier {
       notifyListeners();
 
       //  call /all if user is logged in
-      http.Response response = await http.post(
-          Uri.parse('$baseUrl/auth/register'),
-          body: json.encode(registrationData),
-          headers: {
-            'Content-type': 'application/json',
-          });
 
-      final decodedData = jsonDecode(response.body);
-      print('post result ${decodedData}');
-      if (response.statusCode != 200) {
-        throw (decodedData['error'] ?? 'Something went wrong');
-      }
+      dynamic decodedData = await hTTPInstances.httpPost(
+        path: 'auth/register',
+        data: registrationData,
+      );
+
       await localStorage.setData(
           name: 'token', data: decodedData['result']['token']);
       var serialized = userDataModel.Result.fromJson(decodedData['result']);
@@ -151,20 +141,53 @@ class UserAuthProvider with ChangeNotifier {
       var token = await localStorage.getData(name: 'token');
 
       headers['Authorization'] = "Bearer $token";
-
+      print('token $token');
       if (token == null) return;
-      _isLoadingAuth = true;
+
+      // show loading when userData is null
+      if (_userData.sId == null) _isLoadingAuth = true;
 
       notifyListeners();
 
-      http.Response response =
-          await http.get(Uri.parse('$baseUrl/auth/getMe'), headers: headers);
-
-      final decodedData = jsonDecode(response.body);
+      dynamic decodedData = await hTTPInstances.httpGet('auth/getMe');
 
       var serialized = userDataModel.Result.fromJson(decodedData['result']);
 
       _userData = serialized.data!;
+
+      _isLoadingAuth = false;
+
+      notifyListeners();
+    } catch (error) {
+      print('errror occured 2212 $error');
+      _isLoadingAuth = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  getOtherUserProfie(String userId) async {
+    try {
+      var token = await localStorage.getData(name: 'token');
+      // Reset other user data
+      // if calling a different user
+      if (_otherUserData.sId != userId) {
+        _otherUserData = userDataModel.Data();
+        _isLoadingAuth = true;
+      }
+
+      headers['Authorization'] = "Bearer $token";
+      print('token $token');
+      if (token == null) return;
+
+      notifyListeners();
+
+      dynamic decodedData =
+          await hTTPInstances.httpGet('auth/getOtherUser/$userId');
+
+      var serialized = userDataModel.Result.fromJson(decodedData['result']);
+
+      _otherUserData = serialized.data!;
 
       _isLoadingAuth = false;
 
@@ -184,16 +207,15 @@ class UserAuthProvider with ChangeNotifier {
       notifyListeners();
 
       //  call /all if user is logged in
-      http.Response response = await http.post(
-          Uri.parse('$baseUrl/auth/socialSignup'),
-          body: jsonEncode({type: type}),
-          headers: {'Content-type': 'application/json', 'socialtoken': token});
 
-      final decodedData = jsonDecode(response.body);
-      print('post result ${decodedData}');
-      if (response.statusCode != 200) {
-        throw (decodedData['error'] ?? 'Something went wrong');
-      }
+      dynamic decodedData = await hTTPInstances.httpPost(
+          path: 'auth/socialSignup',
+          data: {type: type},
+          useCustomHeaders: true,
+          customHeaders: {
+            'Content-type': 'application/json',
+            'socialtoken': token
+          });
       await localStorage.setData(
           name: 'token', data: decodedData['result']['token']);
       var serialized = userDataModel.Result.fromJson(decodedData['result']);
@@ -201,12 +223,31 @@ class UserAuthProvider with ChangeNotifier {
       _userData = serialized.data!;
 
       _isLoadingAuth = false;
-      print('registration successfull $_userData');
+
       notifyListeners();
     } catch (error) {
-      print('errror occured $error');
       _isLoadingAuth = false;
       notifyListeners();
+      rethrow;
+    }
+  }
+
+  updateUserProfile({required String key, required String value}) async {
+    try {
+      print('submittinh $key');
+      _isLoadingAuth = true;
+      SmartDialog.showLoading();
+      notifyListeners();
+
+      await hTTPInstances.httpPut(
+          path: 'auth/updateProfile', data: {"data": value, "key": key});
+      SmartDialog.dismiss();
+      await getUserProfie();
+    } catch (error) {
+      _isLoadingAuth = false;
+      notifyListeners();
+      SmartDialog.showToast(error as String,
+          displayTime: const Duration(seconds: 3));
       rethrow;
     }
   }
@@ -234,55 +275,27 @@ class UserAuthProvider with ChangeNotifier {
     }
   }
 
-  // getGameImages() async {
-  //   try {
-  //     if (_allGameImages.isEmpty) {
-  //       _isLoading = true;
-  //     }
+  subscribeToFirebase(String firebaseToken) async {
+    try {
+      _isLoadingAuth = true;
 
-  //     notifyListeners();
+      notifyListeners();
+      final payload = {
+        "firebaseDeviceToken": firebaseToken,
+      };
+      //  call /all if user is logged in
+      await hTTPInstances.httpPost(
+          path: 'auth/subscribeFirebase', data: payload);
 
-  //     http.Response response =
-  //         await http.get(Uri.parse('$baseUrl/game/images'), headers: headers);
+      _isLoadingAuth = false;
 
-  //     final decodedData = jsonDecode(response.body);
-
-  //     var serialized = GamesImages.fromJson(decodedData['result']);
-
-  //     _allGameImages = serialized.imagesData ?? [];
-  //     _isLoading = false;
-  //     notifyListeners();
-  //   } catch (error) {
-  //     print('errror occured 2212 $error');
-  //     _isLoading = false;
-  //     notifyListeners();
-  //     rethrow;
-  //   }
-  // }
-
-  // getAllGenres() async {
-  //   try {
-  //     if (_allGenres.isEmpty) {
-  //       _isLoading = true;
-  //     }
-  //     notifyListeners();
-
-  //     http.Response response =
-  //         await http.get(Uri.parse('$baseUrl/genre/all'), headers: headers);
-
-  //     final decodedData = jsonDecode(response.body);
-
-  //     var serialized = GameGenres.fromJson(decodedData['result']);
-
-  //     _allGenres = serialized.genreData ?? [];
-
-  //     _isLoading = false;
-  //     notifyListeners();
-  //   } catch (error) {
-  //     print('errror occured 2212 $error');
-  //     _isLoading = false;
-  //     notifyListeners();
-  //     rethrow;
-  //   }
-  // }
+      notifyListeners();
+      print('subscribed to firebase');
+    } catch (error) {
+      print('errror occured  $error');
+      _isLoadingAuth = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
 }

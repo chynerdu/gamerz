@@ -67,7 +67,7 @@ class _RegisterFinal extends State<RegisterFinal> {
 
   goToMain(context) {
     final provider = Provider.of<AllGamesProvider>(context, listen: false);
-    Navigator.push(
+    Navigator.pushReplacement(
         context, MaterialPageRoute(builder: (_) => NavigationTabs(provider)));
   }
 

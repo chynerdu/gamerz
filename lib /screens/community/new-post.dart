@@ -3,9 +3,11 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'dart:developer';
 import 'dart:io';
 
+import '../../app-providers/post_provider.dart';
 import '../../commom/avatar.dart';
 import '../../commom/gamerz-wrapper.dart';
 import '../../commom/ui/gamerzRaisedButton.dart';
@@ -79,7 +81,7 @@ class _NewPostState extends State<NewPost> {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         SmartDialog.showToast("Posted");
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       } else {
         SmartDialog.showToast(responseString);
       }

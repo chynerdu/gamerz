@@ -42,7 +42,8 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
     // WidgetsFlutterBinding.ensureInitialized();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       getData();
-      socketConnection.startConnection(callBack: () => getData());
+      // TODO Pass callback to show badge
+      socketConnection.startConnection(callBack: () => null);
     });
 
     super.initState();
@@ -60,35 +61,6 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
   getData() async {
     final postProvider = Provider.of<PostProvider>(context, listen: false);
     await postProvider.getAllPosts();
-  }
-
-  initFirebase() async {
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-    Firebase.initializeApp().whenComplete(() {
-      messaging = FirebaseMessaging.instance;
-      messaging.subscribeToTopic("newGamePost");
-      messaging.getToken().then((value) async {
-        print('firebase token $value');
-        // firebaseSubscribeModel.firebaseDeviceToken = value;
-
-        // var result = await subscribeToFirebase(firebaseSubscribeModel);
-        // print('subscribed $result');
-      });
-    });
-    Firebase.initializeApp();
-
-    // NotificationSettings settings = await messaging.requestPermission(
-    //   alert: true,
-    //   announcement: false,
-    //   badge: true,
-    //   carPlay: false,
-    //   criticalAlert: false,
-    //   provisional: false,
-    //   sound: true,
-    // );
-
-    // print('User granted permission: ${settings.authorizationStatus}');
   }
 
   getGames() async {

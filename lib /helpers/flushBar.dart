@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class CustomFlushBar {
   showErrorFlushBar({required title, required body, required context}) {
     Flushbar(
-      margin: EdgeInsets.symmetric(horizontal: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 10),
       borderRadius: BorderRadius.circular(6),
       title: "$title",
       titleColor: Colors.white,
@@ -17,14 +17,14 @@ class CustomFlushBar {
       boxShadows: [
         BoxShadow(
             color: Colors.red[700] as Color,
-            offset: Offset(0.0, 2.0),
+            offset: const Offset(0.0, 2.0),
             blurRadius: 1.0)
       ],
       backgroundGradient: LinearGradient(
           colors: [Colors.red[500] as Color, Colors.red[700] as Color]),
       isDismissible: true,
-      duration: Duration(seconds: 8),
-      icon: Icon(
+      duration: const Duration(seconds: 8),
+      icon: const Icon(
         Icons.error,
         color: Colors.white,
       ),
@@ -32,19 +32,19 @@ class CustomFlushBar {
         onPressed: () {
           Navigator.pop(context);
         },
-        child: Text(
+        child: const Text(
           "Close",
           style: TextStyle(color: Colors.white),
         ),
       ),
       showProgressIndicator: false,
       progressIndicatorBackgroundColor: Colors.black,
-    )..show(context);
+    ).show(context);
   }
 
   showSuccessFlushBar({required title, required body, required context}) {
     Flushbar(
-      margin: EdgeInsets.symmetric(horizontal: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 10),
       borderRadius: BorderRadius.circular(6),
       title: "$title",
       titleColor: Colors.white,
@@ -57,14 +57,14 @@ class CustomFlushBar {
       boxShadows: [
         BoxShadow(
             color: Colors.green[700] as Color,
-            offset: Offset(0.0, 2.0),
+            offset: const Offset(0.0, 2.0),
             blurRadius: 1.0)
       ],
       backgroundGradient: LinearGradient(
           colors: [Colors.green[500] as Color, Colors.green[700] as Color]),
       isDismissible: true,
-      duration: Duration(seconds: 10),
-      icon: Icon(
+      duration: const Duration(seconds: 10),
+      icon: const Icon(
         Icons.error,
         color: Colors.white,
       ),
@@ -72,13 +72,13 @@ class CustomFlushBar {
         onPressed: () {
           Navigator.pop(context);
         },
-        child: Text(
+        child: const Text(
           "Close",
           style: TextStyle(color: Colors.white),
         ),
       ),
       showProgressIndicator: false,
       // progressIndicatorBackgroundColor: Colors.black,
-    )..show(context);
+    ).show(context);
   }
 }

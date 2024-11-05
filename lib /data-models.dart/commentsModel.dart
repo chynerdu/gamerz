@@ -28,7 +28,7 @@ class Result {
     if (json['data'] != null) {
       data = <CommentData>[];
       json['data'].forEach((v) {
-        data!.add(new CommentData.fromJson(v));
+        data!.insert(0, new CommentData.fromJson(v));
       });
     }
   }
@@ -101,13 +101,15 @@ class Commenter {
   String? sId;
   String? firstName;
   String? lastName;
+  String? profilePicture;
 
-  Commenter({this.sId, this.firstName, this.lastName});
+  Commenter({this.sId, this.firstName, this.lastName, this.profilePicture});
 
   Commenter.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
     firstName = json['first_name'];
     lastName = json['last_name'];
+    profilePicture = json['profileImage'];
   }
 
   Map<String, dynamic> toJson() {
@@ -115,6 +117,7 @@ class Commenter {
     data['_id'] = this.sId;
     data['first_name'] = this.firstName;
     data['last_name'] = this.lastName;
+    data['profileImage'] = this.profilePicture;
     return data;
   }
 }

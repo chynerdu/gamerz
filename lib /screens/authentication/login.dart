@@ -111,7 +111,7 @@ class _Login extends State<Login> {
 
   goToMain(context) {
     final provider = Provider.of<AllGamesProvider>(context, listen: false);
-    Navigator.push(
+    Navigator.pushReplacement(
         context, MaterialPageRoute(builder: (_) => NavigationTabs(provider)));
   }
 
@@ -148,7 +148,7 @@ class _Login extends State<Login> {
                         ),
                         const SizedBox(height: 36),
                         const Text(
-                            'Enter email and password to login to your account',
+                            'Enter your email and password to login to your account',
                             style: GamerzTheme.subHeaderStyle),
                         const SizedBox(height: 36),
                         const Text('Email Address',
