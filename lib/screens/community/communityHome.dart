@@ -1,0 +1,188 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'package:gamerz/app-providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+
+import '../../app-providers/games.provider.dart';
+import '../../app-providers/post_provider.dart';
+import '../../commom/gamerz-wrapper.dart';
+import '../../commom/ui/gamerzTextButton.dart';
+import '../../service/local-storage.dart';
+import '../../service/socket-connection.dart';
+import '../authentication/login.dart';
+import 'for-you/feed.dart';
+import 'for-you/for-you.dart';
+
+class CommunityHomeScreen extends StatefulWidget {
+  final AllGamesProvider provider;
+  final PostProvider postProvider;
+  final UserAuthProvider authProvider;
+  final bool isLoggedIn;
+  CommunityHomeScreen(
+      this.provider, this.authProvider, this.postProvider, this.isLoggedIn);
+  @override
+  State<StatefulWidget> createState() {
+    // TODO: implement createState
+    return CommunityHomeScreenState();
+  }
+}
+
+class CommunityHomeScreenState extends State<CommunityHomeScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController homeController;
+  late FirebaseMessaging messaging;
+  SocketConnection socketConnection = SocketConnection();
+  bool index0visibility = true;
+  bool index1visibility = false;
+  bool index2visibility = false;
+
+  final ScrollController _scrollController = ScrollController();
+
+  // SocketConnection socketConnection = SocketConnection();
+
+  @override
+  void initState() {
+    // WidgetsFlutterBinding.ensureInitialized();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getData();
+      // TODO Pass callback to show badge
+      socketConnection.startConnection(
+          callBack: () => null,
+          userId: widget.authProvider.userData.sId,
+          postProvider: widget.postProvider);
+    });
+
+    super.initState();
+
+    homeController = TabController(vsync: this, length: 2);
+  }
+
+  @override
+  void dispose() {
+    socketConnection.disconnectSocket();
+
+    super.dispose();
+  }
+
+  getData() async {
+    final postProvider = Provider.of<PostProvider>(context, listen: false);
+    await postProvider.getAllPosts();
+  }
+
+  getGames() async {
+    try {
+      await widget.provider.getAllGames();
+    } catch (error) {}
+  }
+
+  Widget buildBody() {
+    return Container(
+        child: const Center(
+      child: Text('Home Screen'),
+    ));
+  }
+
+  toggleVisibility(index) {
+    switch (index) {
+      case 0:
+        setState(() {
+          index0visibility = true;
+          index1visibility = false;
+          index2visibility = false;
+        });
+        break;
+      case 1:
+        setState(() {
+          index0visibility = false;
+          index1visibility = true;
+          index2visibility = false;
+        });
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final postProvider = Provider.of<PostProvider>(context);
+    return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          title: const Text('Community'),
+          actions: <Widget>[
+            Visibility(
+                visible: !widget.isLoggedIn,
+                child: GamerzTextButton(
+                  label: 'Login',
+                  onPressed: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => Login())),
+                ))
+          ],
+          bottom: TabBar(
+            onTap: (index) {
+              toggleVisibility(index);
+              print('hello $index');
+            },
+            labelColor: const Color(0xffE91E63),
+            labelStyle:
+                const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            unselectedLabelColor: Colors.white60,
+            indicatorColor: Colors.transparent,
+            controller: homeController,
+            tabs: <Widget>[
+              Tab(
+                child: Row(
+                  children: <Widget>[
+                    Visibility(
+                        visible: index0visibility,
+                        child: Container(
+                            margin: const EdgeInsets.only(right: 10),
+                            width: 5,
+                            height: 5,
+                            decoration: const BoxDecoration(
+                              color: Color(0xffE91E63),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(40.0),
+                              ),
+                            ))),
+                    const Text(
+                      'For You',
+                    )
+                  ],
+                ),
+              ),
+              Tab(
+                child: Row(
+                  children: <Widget>[
+                    Visibility(
+                        visible: index1visibility,
+                        child: Container(
+                            margin: const EdgeInsets.only(right: 10),
+                            width: 5,
+                            height: 5,
+                            decoration: const BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(40.0),
+                              ),
+                            ))),
+                    const Text(
+                      'Servers',
+                    )
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        body: GamerzWrapper(
+            child: TabBarView(controller: homeController, children: <Widget>[
+          FeedForYou(
+              mainScrollController: _scrollController,
+              postProvider: postProvider,
+              isLoggedIn: widget.isLoggedIn),
+          Feed(postProvider: postProvider),
+        ])));
+  }
+}

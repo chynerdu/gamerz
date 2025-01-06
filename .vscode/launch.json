@@ -5,6 +5,13 @@
    
     "configurations": [
         {
+            "name": "Flutter",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "flutterMode": "release"
+        },
+        {
             "name": "gamerz",
             "request": "launch",
             "type": "dart",
@@ -23,10 +30,10 @@
             "flutterMode": "release"
         },
         {
-            "name": "Flutter (lib /main.dart)",
+            "name": "Flutter (lib/main.dart)",
             "type": "dart",
             "request": "launch",
-            "program": "lib /main.dart"
+            "program": "lib/main.dart"
         }
     ]
 }

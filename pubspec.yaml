@@ -72,6 +72,7 @@ dependencies:
   get: ^4.6.6
   upgrader: ^9.0.0
   flutter_switch: ^0.3.2
+  flutter_widget_from_html: ^0.15.3
 
 dev_dependencies:
   flutter_test:
@@ -123,9 +124,15 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
-    - family: BigSpace
+    - family: Manrope
       fonts:
-        - asset: assets/fonts/BigSpace.ttf
+        - asset: assets/fonts/Manrope-Bold.ttf
+        - asset: assets/fonts/Manrope-ExtraBold.ttf
+        - asset: assets/fonts/Manrope-ExtraLight.ttf
+        - asset: assets/fonts/Manrope-Light.ttf
+        - asset: assets/fonts/Manrope-Medium.ttf
+        - asset: assets/fonts/Manrope-Regular.ttf
+        - asset: assets/fonts/Manrope-SemiBold.ttf
   #   - family: Schyler
   #     fonts:
   #       - asset: fonts/Schyler-Regular.ttf
