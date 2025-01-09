@@ -39,8 +39,8 @@ class GamerzTheme {
   );
 
   static const interactionStyle = TextStyle(
-    color: Color(0xff9A9A9A),
-    fontSize: 15,
+    color: Color.fromARGB(148, 198, 198, 198),
+    fontSize: 12,
     fontWeight: FontWeight.w400,
   );
 

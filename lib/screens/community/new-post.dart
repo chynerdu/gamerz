@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:gamerz/helpers/customColors.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
@@ -145,7 +146,7 @@ class _NewPostState extends State<NewPost> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: true,
-          title: const Text("New post",
+          title: const Text("What's on your mind?",
               style: TextStyle(
                   fontSize: 14,
                   color: Color(0xff8C8C8C),
@@ -153,7 +154,10 @@ class _NewPostState extends State<NewPost> {
           actions: [
             Center(
               child: GamerzElevatedButtonSmall(
-                label: "Post",
+                buttonColor: CustomColors.PrimaryColor,
+                labelColor: Colors.white,
+                minWidth: 50,
+                label: "Share",
                 onPressed: () => _submitPost(context),
               ),
             ),

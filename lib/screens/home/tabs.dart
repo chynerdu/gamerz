@@ -151,9 +151,9 @@ class _NavigationTabsState extends State<NavigationTabs> {
     final authProvider = Provider.of<UserAuthProvider>(context, listen: false);
     final postProvider = Provider.of<PostProvider>(context, listen: false);
     final List<Widget> _widgetOptions = <Widget>[
-      HomeScreen(widget.provider, isLoggedIn()),
       CommunityHomeScreen(
           widget.provider, authProvider, postProvider, isLoggedIn()),
+      HomeScreen(widget.provider, isLoggedIn()),
       Profile(
         myProfile: true,
       )
@@ -171,11 +171,11 @@ class _NavigationTabsState extends State<NavigationTabs> {
             items: <BottomNavigationBarItem>[
               const BottomNavigationBarItem(
                   icon: Icon(Icons.grid_view_rounded),
-                  label: 'Gamerz Zone',
+                  label: 'Home',
                   backgroundColor: CustomColors.backgroundColors),
               const BottomNavigationBarItem(
-                icon: Icon(Icons.people),
-                label: 'Community',
+                icon: Icon(Icons.diamond_rounded),
+                label: 'Featured',
                 backgroundColor: CustomColors.backgroundColors,
               ),
               BottomNavigationBarItem(

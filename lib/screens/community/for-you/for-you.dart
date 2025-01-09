@@ -79,6 +79,8 @@ class _FeedForYouState extends State<FeedForYou> {
     return Scaffold(
         backgroundColor: Colors.transparent,
         floatingActionButton: FloatingActionButton(
+            elevation: 5,
+            shape: const CircleBorder(),
             backgroundColor: const Color.fromARGB(255, 213, 6, 75),
             splashColor: const Color.fromARGB(255, 180, 0, 60),
             onPressed: () async {
@@ -95,7 +97,9 @@ class _FeedForYouState extends State<FeedForYou> {
                 });
               }
             },
-            child: const Icon(Icons.edit_outlined, size: 30)),
+            child: Image.asset('assets/new-post.png')
+            // const Icon(Icons.edit_outlined, size: 30)
+            ),
         body: widget.postProvider.isInitialLoadingAllPosts
             ? ShimmerList()
             : Column(
@@ -300,224 +304,181 @@ class _PostContainerState extends State<PostContainer> {
   Widget build(BuildContext context) {
     SizeManager sizeManager = SizeManager(context);
 
-    return IntrinsicHeight(
-        child: Container(
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                children: [
-                  UserWidget(
-                      isMyPost: widget.isMyPost,
-                      authorId: widget.authorId,
-                      isLoggedIn: widget.isLoggedIn,
-                      author: widget.author,
-                      promptLogin: promptLogin,
-                      sizeManager: sizeManager,
-                      child: AvatarBig(
-                        isNetwork: widget.authorAvatar != null ? true : false,
-                        img: widget.authorAvatar ?? "assets/icons/image1.png",
-                      ))
-                ],
-              ),
-
-              const Expanded(
-                  child: DottedLine(
-                direction: Axis.vertical,
-                // alignment: WrapAlignment.center,
-                lineLength: 10,
-                lineThickness: 1.0,
-                dashLength: 20.0,
-                dashColor: Color(0xff9A9A9A),
-                // dashGradient: [Colors.red, Colors.blue],
-                dashRadius: 0.0,
-                dashGapLength: 10.0,
-                dashGapColor: Colors.transparent,
-                // dashGapGradient: [Colors.red, Colors.blue],
-                dashGapRadius: 0.0,
-              )),
-              // }),
-
-              // Container(
-              //   width: 282,
-              //   height: 0,
-              // ),
-              widget.addingComment == null || widget.addingComment == false
-                  ? _stackedHeads()
-                  : const SizedBox.shrink()
-            ],
-          ),
-          const SizedBox(width: 5),
-          Expanded(
-              child: Column(
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+              UserWidget(
+                  isMyPost: widget.isMyPost,
+                  authorId: widget.authorId,
+                  isLoggedIn: widget.isLoggedIn,
+                  author: widget.author,
+                  promptLogin: promptLogin,
+                  sizeManager: sizeManager,
+                  child: AvatarBig(
+                    isNetwork: widget.authorAvatar != null ? true : false,
+                    img: widget.authorAvatar ?? "assets/icons/image1.png",
+                  )),
+
+              // post content\
+              SizedBox(width: 20),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Container(
-                                    constraints: BoxConstraints(
-                                        maxWidth:
-                                            MediaQuery.of(context).size.width *
-                                                0.2),
-                                    child: UserWidget(
-                                        author: widget.author,
-                                        authorId: widget.authorId,
-                                        promptLogin: promptLogin,
-                                        sizeManager: sizeManager,
-                                        isMyPost: widget.isMyPost,
-                                        child: Text(widget.author,
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w500,
-                                            )))),
-                                const SizedBox(width: 6),
-                                SvgPicture.asset("assets/icons/filVerified.svg",
-                                    width: 12),
-                                const SizedBox(width: 10),
-                                // widget.showFollow == true
-                                //     ? Container(
-                                //         padding: const EdgeInsets.symmetric(
-                                //             horizontal: 8, vertical: 1),
-                                //         decoration: BoxDecoration(
-                                //             borderRadius:
-                                //                 BorderRadius.circular(4),
-                                //             border: Border.all(
-                                //                 color: Colors.white)),
-                                //         child: const Text("Follow",
-                                //             style: TextStyle(
-                                //               fontSize: 12,
-                                //               color: Colors.white,
-                                //               fontWeight: FontWeight.w500,
-                                //             )))
-                                //     : const SizedBox.shrink()
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(widget.date,
-                                    style: GamerzTheme.interactionStyle),
-                                const SizedBox(width: 10),
-                                GestureDetector(
-                                  child: PopupMenuButton<String>(
-                                    icon: const Icon(
-                                      Icons.more_horiz,
-                                      color: Colors.white,
-                                    ),
-                                    onSelected: (String choice) {
-                                      // c.updateTab(2);
-                                      widget.isLoggedIn != true
-                                          ? promptLogin(context, sizeManager,
-                                              'Sign in to join the conversation in ${widget.author}\'s post.')
-                                          : handleClick(choice, context,
-                                              widget.id, sizeManager);
-                                    },
-                                    itemBuilder: (BuildContext context) {
-                                      return widget.isMyPost == true
-                                          ? ['Share Post', 'Delete']
-                                              .map((String choice) {
-                                              return PopupMenuItem<String>(
-                                                value: choice,
-                                                child: Text(choice),
-                                              );
-                                            }).toList()
-                                          : ['Share Post', 'Report']
-                                              .map((String choice) {
-                                              return PopupMenuItem<String>(
-                                                value: choice,
-                                                child: Text(choice),
-                                              );
-                                            }).toList();
-                                    },
-                                  ),
-                                )
-                                // const Icon(
-                                //   Icons.more_horiz,
-                                //   color: Colors.white,
-                                // )
-                              ],
-                            )
+                            Container(
+                                constraints: BoxConstraints(
+                                    maxWidth:
+                                        MediaQuery.of(context).size.width *
+                                            0.2),
+                                child: UserWidget(
+                                    author: widget.author,
+                                    authorId: widget.authorId,
+                                    promptLogin: promptLogin,
+                                    sizeManager: sizeManager,
+                                    isMyPost: widget.isMyPost,
+                                    child: Text(widget.author,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                        )))),
+                            const SizedBox(width: 6),
+                            SvgPicture.asset("assets/icons/filVerified.svg",
+                                width: 12),
                           ],
                         ),
-                        const SizedBox(height: 7),
-                        GestureDetector(
-                            onTap: () => widget.isLoggedIn != true
-                                ? promptLogin(context, sizeManager,
-                                    'Sign in to join the conversation in ${widget.author}\'s post.')
-                                : Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => SinglePost(
-                                              body: PostBody(
-                                                id: widget.id,
-                                                author: widget.author,
-                                                image: widget.image,
-                                                content: widget.content,
-                                                authorId: widget.authorId,
-                                                authorAvatar:
-                                                    widget.authorAvatar,
-                                                commentCounts:
-                                                    widget.commentCounts,
-                                                likes: likes,
-                                                date: widget.date,
-                                              ),
-                                            )),
-                                  ),
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                      padding: const EdgeInsets.only(right: 10),
-                                      child: Text(widget.content,
-                                          overflow: TextOverflow.ellipsis,
-                                          maxLines: 3,
-                                          style: GamerzTheme.postStyle)),
-                                  const SizedBox(height: 7),
-                                  widget.image != null
-                                      ? CachedNetworkImage(
-                                          imageUrl: widget.image as String,
-                                          imageBuilder:
-                                              (context, imageProvider) =>
-                                                  ClipRRect(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8.0),
-                                                      child: Image.network(
-                                                        fit: BoxFit.cover,
-                                                        widget.image as String,
-                                                        // width: double.infinity,
-                                                        // height: MediaQuery.of(context).size.height * 0.4,
-                                                      )),
-                                          placeholder: (context, url) =>
-                                              const SpinKitRipple(
-                                                  color: Color(0xffE91E63)),
-                                          errorWidget: (context, url, error) =>
-                                              const Visibility(
-                                                  visible: false,
-                                                  child: Icon(Icons.error)),
-                                        )
-                                      : const SizedBox.shrink()
-                                ])),
-                      ])),
-                ],
-              ),
-              const SizedBox(height: 17),
+                        Expanded(
+                            child: SizedBox(
+                                height: 0,
+                                child: Align(
+                                    alignment: Alignment.topRight,
+                                    child: GestureDetector(
+                                      child: PopupMenuButton<String>(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 0),
+                                        icon: const Icon(
+                                          Icons.more_horiz,
+                                          color: Colors.white,
+                                        ),
+                                        onSelected: (String choice) {
+                                          // c.updateTab(2);
+                                          widget.isLoggedIn != true
+                                              ? promptLogin(
+                                                  context,
+                                                  sizeManager,
+                                                  'Sign in to join the conversation in ${widget.author}\'s post.')
+                                              : handleClick(choice, context,
+                                                  widget.id, sizeManager);
+                                        },
+                                        itemBuilder: (BuildContext context) {
+                                          return widget.isMyPost == true
+                                              ? ['Share Post', 'Delete']
+                                                  .map((String choice) {
+                                                  return PopupMenuItem<String>(
+                                                    value: choice,
+                                                    child: Text(choice),
+                                                  );
+                                                }).toList()
+                                              : ['Share Post', 'Report']
+                                                  .map((String choice) {
+                                                  return PopupMenuItem<String>(
+                                                    value: choice,
+                                                    child: Text(choice),
+                                                  );
+                                                }).toList();
+                                        },
+                                      ),
+                                    ))))
+                        // const Icon(
+                        //   Icons.more_horiz,
+                        //   color: Colors.white,
+                        // )
+                      ],
+                    ),
+                    const SizedBox(height: 1),
+                    Text(widget.date, style: GamerzTheme.interactionStyle),
+                    const SizedBox(height: 15),
+                    GestureDetector(
+                        onTap: () => widget.isLoggedIn != true
+                            ? promptLogin(context, sizeManager,
+                                'Sign in to join the conversation in ${widget.author}\'s post.')
+                            : Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SinglePost(
+                                          body: PostBody(
+                                            id: widget.id,
+                                            author: widget.author,
+                                            image: widget.image,
+                                            content: widget.content,
+                                            authorId: widget.authorId,
+                                            authorAvatar: widget.authorAvatar,
+                                            commentCounts: widget.commentCounts,
+                                            likes: likes,
+                                            date: widget.date,
+                                          ),
+                                        )),
+                              ),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                  padding: const EdgeInsets.only(right: 10),
+                                  child: Text(widget.content,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 3,
+                                      style: GamerzTheme.postStyle)),
+                              const SizedBox(height: 10),
+                              widget.image != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: widget.image as String,
+                                      imageBuilder: (context, imageProvider) =>
+                                          ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0),
+                                              child: Image.network(
+                                                fit: BoxFit.cover,
+                                                widget.image as String,
+                                                // width: double.infinity,
+                                                // height: MediaQuery.of(context).size.height * 0.4,
+                                              )),
+                                      placeholder: (context, url) =>
+                                          const SpinKitRipple(
+                                              color: Color(0xffE91E63)),
+                                      errorWidget: (context, url, error) =>
+                                          const Visibility(
+                                              visible: false,
+                                              child: Icon(Icons.error)),
+                                    )
+                                  : const SizedBox.shrink()
+                            ])),
+                  ]))
+            ],
+          ),
+          const SizedBox(height: 17),
+          Row(
+            children: [
+              widget.addingComment == null || widget.addingComment == false
+                  ? _stackedHeads()
+                  : const SizedBox.shrink(),
+
+              // likes >>>>>>>>>>>
+
               widget.addingComment == null || widget.addingComment == false
                   ? FittedBox(
                       child: Row(
@@ -606,10 +567,34 @@ class _PostContainerState extends State<PostContainer> {
                     ))
                   : const SizedBox.shrink()
             ],
-          ))
+          )
+
+          // const Expanded(
+          //     child: DottedLine(
+          //   direction: Axis.vertical,
+          //   // alignment: WrapAlignment.center,
+          //   lineLength: 10,
+          //   lineThickness: 1.0,
+          //   dashLength: 20.0,
+          //   dashColor: Color(0xff9A9A9A),
+          //   // dashGradient: [Colors.red, Colors.blue],
+          //   dashRadius: 0.0,
+          //   dashGapLength: 10.0,
+          //   dashGapColor: Colors.transparent,
+          //   // dashGapGradient: [Colors.red, Colors.blue],
+          //   dashGapRadius: 0.0,
+          // )),
+          // }),
+
+          // Container(
+          //   width: 282,
+          //   height: 0,
+          // ),
         ],
       ),
-    ));
+
+      // likes >>>>>>>>>>>>>>>>>>>>>>>>>>.
+    );
   }
 }
 

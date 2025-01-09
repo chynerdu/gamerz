@@ -2,6 +2,9 @@ import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:gamerz/app-providers/auth_provider.dart';
+import 'package:gamerz/commom/avatar.dart';
+import 'package:provider/provider.dart';
 import '../app-providers/games.provider.dart';
 import '../commom/ui/gamerzTextButton.dart';
 import '../service/local-storage.dart';
@@ -58,11 +61,30 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<UserAuthProvider>(context);
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Text('Gamerz Zone'),
+        title: Row(
+          children: [
+            widget.isLoggedIn
+                ? Container(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: AvatarBig(
+                      isNetwork: authProvider.userData.profileImage != null
+                          ? true
+                          : false,
+                      img: authProvider.userData.profileImage ??
+                          "assets/icons/image1.png",
+                    ))
+                : const SizedBox.shrink(),
+            const Text('𝖦𝖺𝗆𝖾𝗋𝗓 𝖹𝗈𝗇𝖾',
+                style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: Color.fromARGB(255, 250, 56, 121))),
+          ],
+        ),
         actions: <Widget>[
           Visibility(
               visible: !widget.isLoggedIn,

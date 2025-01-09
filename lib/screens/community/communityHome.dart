@@ -2,6 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:gamerz/app-providers/auth_provider.dart';
+import 'package:gamerz/commom/avatar.dart';
+import 'package:gamerz/helpers/customColors.dart';
 import 'package:provider/provider.dart';
 
 import '../../app-providers/games.provider.dart';
@@ -109,27 +111,53 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
         backgroundColor: Colors.black,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
-          title: const Text('Community'),
-          actions: <Widget>[
-            Visibility(
-                visible: !widget.isLoggedIn,
-                child: GamerzTextButton(
-                  label: 'Login',
-                  onPressed: () => Navigator.push(
-                      context, MaterialPageRoute(builder: (_) => Login())),
-                ))
-          ],
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              widget.isLoggedIn
+                  ? Container(
+                      child: AvatarBig(
+                      isNetwork:
+                          widget.authProvider.userData.profileImage != null
+                              ? true
+                              : false,
+                      img: widget.authProvider.userData.profileImage ??
+                          "assets/icons/image1.png",
+                    ))
+                  : const SizedBox.shrink(),
+              const Text('𝖦𝖺𝗆𝖾𝗋𝗓 𝖹𝗈𝗇𝖾',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Color.fromARGB(255, 250, 56, 121))),
+              !widget.isLoggedIn
+                  ? Container(
+                      width: MediaQuery.of(context).size.width * 0.11,
+                      child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: GamerzTextButton(
+                            label: 'Login',
+                            onPressed: () => Navigator.push(context,
+                                MaterialPageRoute(builder: (_) => Login())),
+                          )))
+                  : SizedBox(width: MediaQuery.of(context).size.width * 0.11)
+            ],
+          ),
           bottom: TabBar(
             onTap: (index) {
               toggleVisibility(index);
-              print('hello $index');
             },
-            labelColor: const Color(0xffE91E63),
+            labelColor: Colors.white,
+            // const Color(0xffE91E63),
             labelStyle:
                 const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             unselectedLabelColor: Colors.white60,
-            indicatorColor: Colors.transparent,
+            indicatorColor: const Color(0xffE91E63),
+            indicatorSize: TabBarIndicatorSize.label,
             controller: homeController,
+            tabAlignment: TabAlignment.center,
+            // indicatorPadding: EdgeInsets.only(
+            //     right: MediaQuery.of(context).size.width * 0.25),
+            indicatorWeight: 0.1,
             tabs: <Widget>[
               Tab(
                 child: Row(
@@ -141,7 +169,7 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
                             width: 5,
                             height: 5,
                             decoration: const BoxDecoration(
-                              color: Color(0xffE91E63),
+                              color: Colors.white,
                               borderRadius: BorderRadius.all(
                                 Radius.circular(40.0),
                               ),
@@ -162,13 +190,13 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
                             width: 5,
                             height: 5,
                             decoration: const BoxDecoration(
-                              color: Colors.black,
+                              color: Colors.white,
                               borderRadius: BorderRadius.all(
                                 Radius.circular(40.0),
                               ),
                             ))),
                     const Text(
-                      'Servers',
+                      'Zones',
                     )
                   ],
                 ),

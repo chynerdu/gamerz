@@ -78,18 +78,26 @@ class GamerzGoogleElevatedButton extends StatelessWidget {
 class GamerzElevatedButtonSmall extends StatelessWidget {
   final String label;
   final dynamic onPressed;
+  final Color? labelColor;
+  final Color? buttonColor;
+  final double? minWidth;
 
   const GamerzElevatedButtonSmall(
-      {super.key, required this.label, required this.onPressed});
+      {super.key,
+      required this.label,
+      this.labelColor,
+      this.buttonColor,
+      this.minWidth,
+      required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-        constraints: const BoxConstraints(minWidth: 108),
+        constraints: BoxConstraints(minWidth: minWidth ?? 108),
         child: ElevatedButton(
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
+              backgroundColor: buttonColor ?? Colors.white,
               elevation: 4,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
@@ -97,9 +105,9 @@ class GamerzElevatedButtonSmall extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 16,
-                  color: Colors.black,
+                  color: labelColor ?? Colors.black,
                   fontWeight: FontWeight.w700),
             )));
   }
