@@ -150,7 +150,7 @@ class _NewPostState extends State<NewPost> {
               style: TextStyle(
                   fontSize: 14,
                   color: Color(0xff8C8C8C),
-                  fontWeight: FontWeight.w400)),
+                  fontWeight: FontWeight.w700)),
           actions: [
             Center(
               child: GamerzElevatedButtonSmall(

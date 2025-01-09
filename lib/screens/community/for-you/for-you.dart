@@ -364,7 +364,7 @@ class _PostContainerState extends State<PostContainer> {
                         ),
                         Expanded(
                             child: SizedBox(
-                                height: 0,
+                                height: 3,
                                 child: Align(
                                     alignment: Alignment.topRight,
                                     child: GestureDetector(
