@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:gamerz/helpers/customColors.dart';
+import 'package:gamerz/app-providers/auth_provider.dart';
+import 'package:gamerz/commom/custom-colors.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
@@ -43,7 +44,7 @@ class _NewPostState extends State<NewPost> {
       if (fileSize > 5) {
         SmartDialog.showToast(
             "The selected file $fileSize MB is too large. Limit is 10MB",
-            displayTime: Duration(seconds: 5));
+            displayTime: const Duration(seconds: 5));
       } else {
         setState(() => _imageFileList!.add(pickedFile));
       }
@@ -98,14 +99,14 @@ class _NewPostState extends State<NewPost> {
 
   Widget _buildImagePreview(SizeManager sizeManager) {
     if (_imageFileList == null || _imageFileList!.isEmpty)
-      return SizedBox.shrink();
-    return Container(
+      return const SizedBox.shrink();
+    return SizedBox(
       height: sizeManager.scaledHeight(50),
       width: sizeManager.scaledWidth(85),
       child: Stack(
         children: [
           Container(
-            padding: EdgeInsets.fromLTRB(5, 5, 15, 5),
+            padding: const EdgeInsets.fromLTRB(5, 5, 15, 5),
             child: Image.file(
               File(_imageFileList![0].path),
               fit: BoxFit.cover,
@@ -128,6 +129,7 @@ class _NewPostState extends State<NewPost> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<UserAuthProvider>(context);
     final sizeManager = SizeManager(context);
     return GamerzWrapper(
       child: Scaffold(
@@ -154,9 +156,9 @@ class _NewPostState extends State<NewPost> {
           actions: [
             Center(
               child: GamerzElevatedButtonSmall(
-                buttonColor: CustomColors.PrimaryColor,
+                buttonColor: CustomColors.primaryColor,
                 labelColor: Colors.white,
-                minWidth: 50,
+                minWidth: 40,
                 label: "Share",
                 onPressed: () => _submitPost(context),
               ),
@@ -167,25 +169,36 @@ class _NewPostState extends State<NewPost> {
           child: Column(
             children: [
               Container(
-                margin: EdgeInsets.only(top: 25),
+                margin: const EdgeInsets.only(top: 25),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 decoration: BoxDecoration(
-                  color: Color(0xff313132),
-                  border: Border.all(color: Color(0xFF747474), width: 1),
+                  color: CustomColors.inputBackgroundColor,
+                  border: Border.all(
+                      color: Color.fromARGB(108, 116, 116, 116), width: 1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   children: [
                     Row(
                       children: [
-                        AvatarSmall(img: "assets/icons/image1.png"),
-                        SizedBox(width: 26),
-                        Text('Start typing',
-                            style: TextStyle(color: Colors.white)),
+                        SizedBox(
+                            width: 25,
+                            height: 25,
+                            child: AvatarBig(
+                              isNetwork:
+                                  authProvider.userData.profileImage != null
+                                      ? true
+                                      : false,
+                              img: authProvider.userData.profileImage ??
+                                  "assets/icons/image1.png",
+                            )),
+                        const SizedBox(width: 15),
+                        Text('${authProvider.userData.firstName}',
+                            style: const TextStyle(color: Colors.white)),
                       ],
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -222,9 +235,9 @@ class _NewPostState extends State<NewPost> {
                   ],
                 ),
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
               _buildImagePreview(sizeManager),
-              SizedBox(height: 40),
+              const SizedBox(height: 40),
             ],
           ),
         ),

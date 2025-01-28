@@ -1,8 +1,13 @@
+import 'dart:ui';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gamerz/screens/community/profile/followers.dart';
+import 'package:gamerz/shared/post-container.dart';
 import 'package:jiffy/jiffy.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import '../../../app-providers/auth_provider.dart';
 import '../../../app-providers/post_provider.dart';
@@ -14,7 +19,7 @@ import '../../../commom/ui/shimmers.dart';
 import '../../../data-models.dart/userModel.dart';
 import '../../../data-models.dart/postModel.dart' as postData;
 import '../../settings/settings.dart';
-import '../for-you/for-you.dart';
+import 'dart:math';
 import 'edit-profile.dart';
 import 'posts-liked.dart';
 
@@ -29,17 +34,23 @@ class Profile extends StatefulWidget {
   }
 }
 
-class _ProfileState extends State<Profile> {
+class _ProfileState extends State<Profile> with SingleTickerProviderStateMixin {
   bool profileLoading = false;
   final _allPostsscrollController = ScrollController();
+  final _allPostsscrollController2 = ScrollController();
+  late TabController tabController;
   final _scrollThreshold = 200;
-
+  bool _isAtTop = true;
   // AuthRepository authRepository = AuthRepository();
   @override
   void initState() {
+    final authProvider = Provider.of<UserAuthProvider>(context, listen: false);
+    tabController = TabController(
+        length: widget.myProfile || widget.userId == authProvider.userData.sId
+            ? 2
+            : 1,
+        vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider =
-          Provider.of<UserAuthProvider>(context, listen: false);
       final postProvider = Provider.of<PostProvider>(context, listen: false);
       Data profile = authProvider.userData;
       if (widget.myProfile || widget.userId == profile.sId) {
@@ -51,8 +62,17 @@ class _ProfileState extends State<Profile> {
         }
         getOtherUserProfile(widget.userId!);
       }
-      _allPostsscrollController
-          .addListener(() => _onScroll(profile, postProvider));
+      _allPostsscrollController.addListener(() {
+        _onScroll(profile, postProvider);
+      });
+
+      _allPostsscrollController2.addListener(() {
+        setState(() {
+          print('${_allPostsscrollController2.position.pixels}');
+          // Check if the scroll position is at the top
+          _isAtTop = _allPostsscrollController2.position.pixels == 0;
+        });
+      });
     });
 
     super.initState();
@@ -65,7 +85,7 @@ class _ProfileState extends State<Profile> {
         //  My profile and post
         widget.myProfile = true;
         if (int.tryParse(postProvider.myPosts.meta!.page!.toString()) !=
-            int.tryParse(postProvider.myPosts.meta!.total.toString())) {
+            int.tryParse(postProvider.myPosts.meta!.pages.toString())) {
           int page = postProvider.myPosts.data == null
               ? 1
               : postProvider.myPosts.meta!.page! + 1;
@@ -100,6 +120,7 @@ class _ProfileState extends State<Profile> {
     Data profile = authProvider.userData;
     _allPostsscrollController
         .removeListener(() => _onScroll(profile, postProvider));
+    _allPostsscrollController2.dispose();
     super.dispose();
   }
 
@@ -152,6 +173,66 @@ class _ProfileState extends State<Profile> {
     );
   }
 
+  void showFollowerList(int initialIndex) {
+    showCupertinoModalBottomSheet(
+      context: context,
+      builder: (context) => Followers(
+        initialIndex: initialIndex,
+      ),
+    );
+  }
+
+  confirmUnfollow({name, id, authProvider}) async {
+    return (await showDialog(
+          context: context,
+          builder: (context) => BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+            child: AlertDialog(
+              title: Text(
+                'Unfollow $name',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+              content: const Text(
+                'You will not be able to interact with them',
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+              backgroundColor: Color.fromARGB(240, 0, 0, 0),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15)),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text(
+                    'Unfollow',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () async {
+                    authProvider.isFollowing
+                        ? null
+                        : Navigator.of(context).pop(false);
+                    await authProvider.followUnfollow(id: id);
+                  },
+                ),
+                TextButton(
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: CustomColors.primaryColor),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                ),
+              ],
+            ),
+          ),
+        )) ??
+        false;
+  }
+
   Widget header(UserAuthProvider authProvider) {
     // Controller c = Get.put(Controller());
     Data profile =
@@ -167,6 +248,7 @@ class _ProfileState extends State<Profile> {
                     child: Text('Unable to load profile',
                         style: TextStyle(color: Colors.white))))
             : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 40),
                   Row(
@@ -205,7 +287,8 @@ class _ProfileState extends State<Profile> {
                                 profile.username != null
                                     ? '@${profile.username}'
                                     : '',
-                                style: GamerzTheme.usernameStyle,
+                                style: GamerzTheme.followerCount
+                                    .copyWith(color: Colors.white),
                               ),
                             ],
                           )),
@@ -253,66 +336,197 @@ class _ProfileState extends State<Profile> {
                       ))
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.15,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 8),
-                              // TODO uncomment after implementing follow and follow back
-                              // Text(
-                              //   '${profile.following} following',
-                              //   style: GamerzTheme.followerCount,
-                              // ),
-                              // const SizedBox(height: 10),
-                              // Text(
-                              //   '${profile.followers} followers',
-                              //   style: GamerzTheme.followerCount,
-                              // ),
-                              const SizedBox(height: 10),
-                              Row(
-                                children: [
-                                  SvgPicture.asset('assets/icons/share.svg'),
-                                  const SizedBox(width: 16),
-                                  !widget.myProfile
-                                      ? SvgPicture.asset(
-                                          'assets/icons/filMessage.svg')
-                                      : GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        Setting()));
-                                          },
-                                          child: SvgPicture.asset(
-                                              'assets/icons/filSettings.svg'))
+
+                  // follower count
+                  Container(
+                    // width: MediaQuery.of(context).size.width * 0.2,
+                    child: Row(
+                      children: [
+                        TextButton(
+                            style: TextButton.styleFrom(
+                              padding:
+                                  EdgeInsets.zero, // Remove internal padding
+                            ),
+                            onPressed: () => showFollowerList(0),
+                            child: RichText(
+                              text: TextSpan(
+                                text: '${profile.following} ',
+                                style: GamerzTheme.followerCount
+                                    .copyWith(color: Colors.white),
+                                children: const <TextSpan>[
+                                  TextSpan(
+                                      text: 'following',
+                                      style: GamerzTheme.followerCount),
                                 ],
-                              )
-                            ],
-                          )),
-                      const SizedBox(width: 24),
-                      SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.6,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(profile.bio ?? '',
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 3,
-                                  style: GamerzTheme.bioStyle),
-                              const SizedBox(height: 15),
-                              // const Text(
-                              //   'linktr.ee/chinedu_uche7',
-                              //   style: GamerzTheme.followerCount,
-                              // ),
-                            ],
-                          )),
+                              ),
+                            )),
+                        SizedBox(width: 15),
+                        TextButton(
+                            style: TextButton.styleFrom(
+                              padding:
+                                  EdgeInsets.zero, // Remove internal padding
+                            ),
+                            onPressed: () => showFollowerList(1),
+                            child: RichText(
+                              text: TextSpan(
+                                text: '${profile.followers} ',
+                                style: GamerzTheme.followerCount
+                                    .copyWith(color: Colors.white),
+                                children: const <TextSpan>[
+                                  TextSpan(
+                                      text: 'followers',
+                                      style: GamerzTheme.followerCount),
+                                ],
+                              ),
+                            )),
+                      ],
+                    ),
+                  ),
+                  // bio
+                  Column(
+                    children: [
+                      profile.bio != null && profile.bio!.isNotEmpty
+                          ? SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.6,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(profile.bio ?? '',
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 3,
+                                      style: GamerzTheme.postStyle
+                                          .copyWith(fontSize: 14)),
+
+                                  // const Text(
+                                  //   'linktr.ee/chinedu_uche7',
+                                  //   style: GamerzTheme.followerCount,
+                                  // ),
+                                ],
+                              ))
+                          : SizedBox.shrink(),
+                      SizedBox(height: 20),
                     ],
                   ),
+
+                  Row(
+                    children: [
+                      Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(7),
+                              border: Border.all(color: Colors.white)),
+                          child: SvgPicture.asset('assets/icons/share.svg',
+                              width: 10, height: 10)),
+                      const SizedBox(width: 10),
+                      !widget.myProfile
+                          ? Row(children: [
+                              GestureDetector(
+                                  onTap: () async {
+                                    // authProvider.isFollowing
+                                    //     ? null
+                                    //     : await authProvider.followUnfollow(
+                                    //         id: profile.sId);
+                                  },
+                                  child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 2),
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(7),
+                                          border:
+                                              Border.all(color: Colors.white)),
+                                      child: const Text("Message",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          )))),
+                              SizedBox(width: 10),
+                              profile.followingUser == true
+                                  ? GestureDetector(
+                                      onTap: () {
+                                        confirmUnfollow(
+                                            name: profile.firstName,
+                                            id: profile.sId,
+                                            authProvider: authProvider);
+                                      },
+                                      child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 2),
+                                          decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(7),
+                                              border: Border.all(
+                                                  color: Colors.white)),
+                                          child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                const Text("Following",
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    )),
+                                                SizedBox(
+                                                  width: 3,
+                                                ),
+                                                Transform.rotate(
+                                                  angle: 270 *
+                                                      (pi /
+                                                          180), // Rotate 45 degrees
+                                                  child: Icon(
+                                                    Icons.arrow_back_ios_new,
+                                                    size: 11,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ])))
+                                  : GestureDetector(
+                                      onTap: () async {
+                                        authProvider.isFollowing
+                                            ? null
+                                            : await authProvider.followUnfollow(
+                                                id: profile.sId);
+                                      },
+                                      child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 2),
+                                          decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(7),
+                                              color: Colors.white,
+                                              border: Border.all(
+                                                  color: Colors.white)),
+                                          child: const Text("Follow",
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.w600,
+                                              ))))
+                            ])
+                          : GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => Setting()));
+                              },
+                              child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(7),
+                                      border: Border.all(color: Colors.white)),
+                                  child: SvgPicture.asset(
+                                      'assets/icons/filSettings.svg',
+                                      width: 10,
+                                      height: 10)))
+                    ],
+                  ),
+                  const SizedBox(height: 20),
                 ],
               );
   }
@@ -320,59 +534,88 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<UserAuthProvider>(context);
-    return DefaultTabController(
-      length: widget.myProfile || widget.userId == authProvider.userData.sId
-          ? 2
-          : 1,
+    return SafeArea(
       child: NestedScrollView(
+          controller: _allPostsscrollController2,
+          // physics: _isAtTop
+          //     ? const AlwaysScrollableScrollPhysics()
+          //     : const ClampingScrollPhysics(),
           headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
             return <Widget>[
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(15, 20, 15, 0),
+                padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
                 sliver: SliverToBoxAdapter(child: header(authProvider)),
               ),
-              SliverAppBar(
-                backgroundColor: CustomColors.backgroundColors,
-                pinned: true,
-                elevation: 12.0,
-                leading: Container(),
-                toolbarHeight: 0,
-                bottom: TabBar(
-                  labelColor: CustomColors.primaryColor,
-                  indicatorColor: CustomColors.primaryColor,
-                  unselectedLabelColor: Colors.white,
-                  tabs: widget.myProfile ||
-                          widget.userId == authProvider.userData.sId
-                      ? [
-                          const Text("Posts",
-                              style: TextStyle(
-                                fontSize: 16.475095748901367,
-                                fontWeight: FontWeight.w400,
-                              )),
-                          const Text("Likes",
-                              style: TextStyle(
-                                fontSize: 16.475095748901367,
-                                fontWeight: FontWeight.w400,
-                              ))
-                        ]
-                      : [
-                          const Text("Posts",
-                              style: TextStyle(
-                                fontSize: 16.475095748901367,
-                                fontWeight: FontWeight.w400,
-                              )),
-                        ],
-                ),
-              ),
+              SliverOverlapAbsorber(
+                  handle:
+                      NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                  sliver: SliverAppBar(
+                    iconTheme: const IconThemeData(color: Colors.black),
+                    backgroundColor: Color(0xFF000000),
+                    // pinned: true,
+                    toolbarHeight: 0,
+                    elevation: 0,
+                    pinned: true,
+                    floating: true,
+                    forceElevated: innerBoxIsScrolled,
+                    bottom: TabBar(
+                      padding: EdgeInsets.all(0),
+
+                      controller: tabController,
+                      labelColor: Colors.white,
+                      labelStyle: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.bold),
+                      indicatorColor: CustomColors.primaryColor,
+                      unselectedLabelColor: Colors.white60,
+                      // indicatorWeight: 0.1,
+                      // indicatorPadding: EdgeInsets.only(
+                      //     right: MediaQuery.of(context).size.width * 0.25),
+                      tabs: widget.myProfile ||
+                              widget.userId == authProvider.userData.sId
+                          ? [
+                              const Text(
+                                "Posts",
+                              ),
+                              const Text(
+                                "Likes",
+                              )
+                            ]
+                          : [
+                              const Text(
+                                "Posts",
+                              ),
+                            ],
+                    ),
+
+                    // flexibleSpace: FlexibleSpaceBar(
+                    //   title: header(authProvider),
+                    // ),
+                  )),
+              // SliverPersistentHeader(
+              //   delegate: MySliverPersistentHeaderDelegate(
+
+              //   ),
+              //   pinned: true,
+              // ),
             ];
           },
-          body: GamerzWrapper(
-              child: TabBarView(
-            // controller: tabController,
+          body:
+              // TabBarView(
+              //   children: [
+              //     Icon(Icons.flight, size: 350),
+              //     Icon(Icons.directions_transit, size: 350),
+              //   ],
+              // )
+              GamerzWrapper(
+                  child: TabBarView(
+            controller: tabController,
             children: widget.myProfile ||
                     widget.userId == authProvider.userData.sId
                 ? <Widget>[
-                    MyPosts(mainScrollController: _allPostsscrollController),
+                    MyPosts(
+                      mainScrollController: _allPostsscrollController,
+                      isAtTop: _isAtTop,
+                    ),
                     const PostsILiked()
                   ]
                 : <Widget>[
@@ -385,7 +628,9 @@ class _ProfileState extends State<Profile> {
 
 class MyPosts extends StatelessWidget {
   final ScrollController mainScrollController;
-  const MyPosts({super.key, required this.mainScrollController});
+  final bool isAtTop;
+  const MyPosts(
+      {super.key, required this.mainScrollController, required this.isAtTop});
 
   @override
   Widget build(BuildContext context) {
@@ -393,38 +638,87 @@ class MyPosts extends StatelessWidget {
     return postProvider.isInitialLoadingMyOrUsersPosts
         ? ShimmerList()
         : postProvider.myPosts.data!.isNotEmpty
-            ? Container(
-                child: ListView.separated(
-                controller: mainScrollController,
+            ? Builder(builder: (BuildContext context) {
+                return CustomScrollView(
+                  key: PageStorageKey<int>(0),
+                  slivers: <Widget>[
+                    SliverOverlapInjector(
+                      handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
+                          context),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.all(8.0),
+                      sliver: SliverList.builder(
+                        itemBuilder: (BuildContext context, int index) {
+                          postData.Data post =
+                              postProvider.myPosts.data![index];
+                          return PostContainer(
+                            postType: PostType.main,
+                            id: post.sId as String,
+                            content: "${post.message}",
+                            commentCounts: post.comments as int,
+                            likes: post.likes as int,
+                            author: "${post.author![0].firstName}",
+                            authorAvatar: post.author![0].profilePicture ??
+                                post.author![0].profilePicture as dynamic,
+                            date: "${Jiffy(post.updatedAt).fromNow()}",
+                            image: post.media!.length > 0
+                                ? "${post.media![0].url}"
+                                : null,
+                            postProvider: postProvider,
+                            authorId: post.author![0].sId as String,
+                            isMyPost: true,
+                            userLiked: post.userLiked,
+                            isLoggedIn: true,
+                          );
+                        },
+                        itemCount: postProvider.myPosts.data!.length,
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+                // ListView.separated(
+                // padding: const EdgeInsets.only(top: 0),
+                // physics: const AlwaysScrollableScrollPhysics(),
+                // controller: mainScrollController,
                 // physics: NeverScrollableScrollPhysics(),
                 // shrinkWrap: true,
                 // reverse: true,
-                itemCount: postProvider.myPosts.data!.length,
-                separatorBuilder: (context, index) {
-                  return const Divider(
-                      thickness: 1, height: 0, color: Color(0xFF747474));
-                },
-                itemBuilder: ((BuildContext context, index) {
-                  postData.Data post = postProvider.myPosts.data![index];
-                  return PostContainer(
-                    id: post.sId as String,
-                    content: "${post.message}",
-                    commentCounts: post.comments as int,
-                    likes: post.likes as int,
-                    author: "${post.author![0].firstName}",
-                    authorAvatar: post.author![0].profilePicture ??
-                        post.author![0].profilePicture as dynamic,
-                    date: "${Jiffy(post.updatedAt).fromNow()}",
-                    image:
-                        post.media!.length > 0 ? "${post.media![0].url}" : null,
-                    postProvider: postProvider,
-                    authorId: post.author![0].sId as String,
-                    isMyPost: true,
-                    userLiked: post.userLiked,
-                    isLoggedIn: true,
-                  );
-                }),
-              ))
+                // physics: !isAtTop
+                //     ? const NeverScrollableScrollPhysics()
+                //     : const AlwaysScrollableScrollPhysics(),
+                // itemCount: postProvider.myPosts.data!.length,
+                // separatorBuilder: (context, index) {
+                //   return const Divider(
+                //       thickness: 1,
+                //       height: 0,
+                //       color: CustomColors.dividerColor);
+                // },
+                // itemBuilder: ((BuildContext context, index) {
+                //   postData.Data post = postProvider.myPosts.data![index];
+                //   return PostContainer(
+                //     postType: PostType.main,
+                //     id: post.sId as String,
+                //     content: "${post.message}",
+                //     commentCounts: post.comments as int,
+                //     likes: post.likes as int,
+                //     author: "${post.author![0].firstName}",
+                //     authorAvatar: post.author![0].profilePicture ??
+                //         post.author![0].profilePicture as dynamic,
+                //     date: "${Jiffy(post.updatedAt).fromNow()}",
+                //     image:
+                //         post.media!.length > 0 ? "${post.media![0].url}" : null,
+                //     postProvider: postProvider,
+                //     authorId: post.author![0].sId as String,
+                //     isMyPost: true,
+                //     userLiked: post.userLiked,
+                //     isLoggedIn: true,
+                //   );
+                // }),
+                // )
+                )
             : const Center(
                 child: Text("You have not made any post yet",
                     style: TextStyle(color: (Colors.white))));
@@ -441,40 +735,129 @@ class UsersPosts extends StatelessWidget {
     return postProvider.isInitialLoadingMyOrUsersPosts
         ? ShimmerList()
         : postProvider.userPosts.data!.isNotEmpty
-            ? Container(
-                child: ListView.separated(
-                controller: mainScrollController,
-                // physics: NeverScrollableScrollPhysics(),
-                // shrinkWrap: true,
-                // reverse: true,
-                itemCount: postProvider.userPosts.data!.length,
-                separatorBuilder: (context, index) {
-                  return const Divider(
-                      thickness: 1, height: 0, color: Color(0xFF747474));
-                },
-                itemBuilder: ((BuildContext context, index) {
-                  postData.Data post = postProvider.userPosts.data![index];
-                  return PostContainer(
-                    id: post.sId as String,
-                    content: "${post.message}",
-                    commentCounts: post.comments as int,
-                    likes: post.likes as int,
-                    author: "${post.author![0].firstName}",
-                    authorAvatar: post.author![0].profilePicture ??
-                        post.author![0].profilePicture as dynamic,
-                    date: "${Jiffy(post.updatedAt).fromNow()}",
-                    image:
-                        post.media!.length > 0 ? "${post.media![0].url}" : null,
-                    postProvider: postProvider,
-                    authorId: post.author![0].sId as String,
-                    isMyPost: true,
-                    userLiked: post.userLiked,
-                    isLoggedIn: true,
-                  );
-                }),
-              ))
+            ? Builder(builder: (BuildContext context) {
+                return CustomScrollView(
+                  key: PageStorageKey<int>(1),
+                  slivers: <Widget>[
+                    SliverOverlapInjector(
+                      handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
+                          context),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.all(8.0),
+                      sliver: SliverList.builder(
+                        itemBuilder: (BuildContext context, int index) {
+                          postData.Data post =
+                              postProvider.userPosts.data![index];
+                          return PostContainer(
+                            id: post.sId as String,
+                            content: "${post.message}",
+                            commentCounts: post.comments as int,
+                            likes: post.likes as int,
+                            author: "${post.author![0].firstName}",
+                            authorAvatar: post.author![0].profilePicture ??
+                                post.author![0].profilePicture as dynamic,
+                            date: "${Jiffy(post.updatedAt).fromNow()}",
+                            image: post.media!.length > 0
+                                ? "${post.media![0].url}"
+                                : null,
+                            postProvider: postProvider,
+                            authorId: post.author![0].sId as String,
+                            isMyPost: true,
+                            userLiked: post.userLiked,
+                            isLoggedIn: true,
+                          );
+                        },
+                        itemCount: postProvider.userPosts.data!.length,
+                      ),
+                    ),
+                  ],
+                );
+              })
+
+            // Container(
+            //     padding: const EdgeInsets.only(bottom: 20),
+            //     child: ListView.separated(
+            //       padding: const EdgeInsets.only(top: 0),
+            //       physics: const NeverScrollableScrollPhysics(),
+            //       controller: mainScrollController,
+            //       // physics: NeverScrollableScrollPhysics(),
+            //       // shrinkWrap: true,
+            //       // reverse: true,
+            //       itemCount: postProvider.userPosts.data!.length,
+            //       separatorBuilder: (context, index) {
+            //         return const Divider(
+            //             thickness: 1,
+            //             height: 0,
+            //             color: CustomColors.dividerColor);
+            //       },
+            //       itemBuilder: ((BuildContext context, index) {
+            //         postData.Data post = postProvider.userPosts.data![index];
+            //         return PostContainer(
+            //           id: post.sId as String,
+            //           content: "${post.message}",
+            //           commentCounts: post.comments as int,
+            //           likes: post.likes as int,
+            //           author: "${post.author![0].firstName}",
+            //           authorAvatar: post.author![0].profilePicture ??
+            //               post.author![0].profilePicture as dynamic,
+            //           date: "${Jiffy(post.updatedAt).fromNow()}",
+            //           image: post.media!.length > 0
+            //               ? "${post.media![0].url}"
+            //               : null,
+            //           postProvider: postProvider,
+            //           authorId: post.author![0].sId as String,
+            //           isMyPost: true,
+            //           userLiked: post.userLiked,
+            //           isLoggedIn: true,
+            //         );
+            //       }),
+            //     ))
+
             : const Center(
                 child: Text("This user has not made any post yet",
                     style: TextStyle(color: (Colors.white))));
+  }
+}
+
+// ... existing code ...
+
+// ... existing code ...
+
+class MySliverPersistentHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+  // final double minHeight;
+  // final double maxHeight;
+
+  MySliverPersistentHeaderDelegate(
+    this.tabBar,
+    // this.minHeight,
+    // this.maxHeight,
+  );
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    // Header content
+    return SizedBox(
+      height: tabBar.preferredSize.height,
+      child: tabBar,
+    );
+  }
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+  // tabBar.preferredSize.height; // Set minExtent to the height of the TabBar
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+  // tabBar.preferredSize.height; // Set maxExtent to the height of the TabBar
+
+  double layoutExtent(double shrinkOffset) =>
+      max(min(maxExtent, maxExtent - shrinkOffset), 0);
+
+  @override
+  bool shouldRebuild(covariant MySliverPersistentHeaderDelegate oldDelegate) {
+    // Rebuild only if necessary
+    return tabBar != oldDelegate.tabBar;
   }
 }

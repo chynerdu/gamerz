@@ -5,7 +5,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gamerz/app-providers/post_provider.dart';
+import 'package:gamerz/screens/community/for-you/search-list.dart';
+import 'package:gamerz/screens/community/new-post.dart';
 import 'package:get/get.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
 import '../../app-providers/auth_provider.dart';
@@ -81,12 +84,48 @@ class _NavigationTabsState extends State<NavigationTabs> {
     return token != null ? true : false;
   }
 
-  void _onItemTapped(int index) {
+  void _onItemTapped(int index, authProvider, postProvider) async {
     // reload on tapping icon on same tab
     if (index == 0 && _selectedIndex == 0) {
       getGamesAndPlatforms();
     }
-    if (index == 2 && !isLoggedIn()) {
+
+    // if (index == 2) {
+    //   if (isLoggedIn()) {
+    //     final result = await Navigator.push(
+    //         context,
+    //         MaterialPageRoute(
+    //             builder: (_) => NewPost(
+    //                   postProvider: postProvider,
+    //                 )));
+
+    //     if (result == true) {
+    //       setState(() {
+    //         postProvider.getAllPosts();
+    //       });
+    //     }
+
+    //     return;
+    //   } else {
+    //     Navigator.push(
+    //         context, MaterialPageRoute(builder: (_) => const Login()));
+    //   }
+    // }
+
+    if (index == 2) {
+      if (isLoggedIn()) {
+        showCupertinoModalBottomSheet(
+          context: context,
+          builder: (context) => SearchList(authProvider: authProvider),
+        );
+
+        return;
+      } else {
+        Navigator.push(
+            context, MaterialPageRoute(builder: (_) => const Login()));
+      }
+    }
+    if (index == 3 && !isLoggedIn()) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const Login()));
 
       return;
@@ -154,6 +193,7 @@ class _NavigationTabsState extends State<NavigationTabs> {
       CommunityHomeScreen(
           widget.provider, authProvider, postProvider, isLoggedIn()),
       HomeScreen(widget.provider, isLoggedIn()),
+      SearchList(authProvider: authProvider),
       Profile(
         myProfile: true,
       )
@@ -162,33 +202,90 @@ class _NavigationTabsState extends State<NavigationTabs> {
         canPop: false,
         onPopInvoked: (didPop) => _onWillPop(),
         child: Scaffold(
-          backgroundColor: CustomColors.backgroundColors,
-          body: Center(
-            child: _widgetOptions.elementAt(_selectedIndex),
-          ),
-          bottomNavigationBar: BottomNavigationBar(
             backgroundColor: CustomColors.backgroundColors,
-            items: <BottomNavigationBarItem>[
-              const BottomNavigationBarItem(
-                  icon: Icon(Icons.grid_view_rounded),
-                  label: 'Home',
-                  backgroundColor: CustomColors.backgroundColors),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.diamond_rounded),
-                label: 'Featured',
-                backgroundColor: CustomColors.backgroundColors,
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person),
-                label: isLoggedIn() ? 'Me' : 'Login',
-                backgroundColor: CustomColors.backgroundColors,
-              ),
-            ],
-            currentIndex: _selectedIndex,
-            unselectedItemColor: const Color(0xff9A9A9A),
-            selectedItemColor: Colors.white,
-            onTap: _onItemTapped,
-          ),
-        ));
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerDocked,
+            floatingActionButton: FloatingActionButton(
+                backgroundColor: Colors.transparent,
+                elevation: 5,
+                shape: const CircleBorder(),
+                // backgroundColor: const Color.fromARGB(255, 213, 6, 75),
+                splashColor: const Color.fromARGB(255, 180, 0, 60),
+                onPressed: () async {
+                  final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => NewPost(
+                                postProvider: postProvider,
+                              )));
+
+                  if (result == true) {
+                    setState(() {
+                      postProvider.getAllPosts();
+                    });
+                  }
+                },
+                child: Container(
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 213, 6, 75),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                Colors.black.withOpacity(0.2), // Shadow color
+                            spreadRadius: 2, // Spread radius
+                            blurRadius: 5, // Blur radius
+                            offset: Offset(0, 3), // Offset for the shadow
+                          ),
+                        ],
+                        borderRadius: BorderRadius.circular(50)),
+                    child: Image.asset(
+                      'assets/new-post.png',
+                      width: 27,
+                      height: 27,
+                    ))),
+            body: Center(
+              child: _widgetOptions.elementAt(_selectedIndex),
+            ),
+            bottomNavigationBar: BottomAppBar(
+                padding: EdgeInsets.all(0),
+                color: Color.fromARGB(255, 5, 5, 5),
+                height: kBottomNavigationBarHeight + 5,
+                surfaceTintColor: Color.fromARGB(255, 5, 5, 5),
+                shape: const CircularNotchedRectangle(),
+                clipBehavior: Clip.antiAlias,
+                child: SizedBox(
+                  child: BottomNavigationBar(
+                    type: BottomNavigationBarType.fixed,
+                    backgroundColor: Color.fromARGB(255, 5, 5, 5),
+                    elevation: 0,
+                    items: <BottomNavigationBarItem>[
+                      const BottomNavigationBarItem(
+                          icon: Icon(Icons.home_filled),
+                          label: 'Home',
+                          backgroundColor: CustomColors.backgroundColors),
+                      const BottomNavigationBarItem(
+                        icon: Icon(Icons.diamond_rounded),
+                        label: 'Featured',
+                        backgroundColor: CustomColors.backgroundColors,
+                      ),
+                      const BottomNavigationBarItem(
+                        icon: Icon(Icons.search, color: Colors.white),
+                        label: 'Search',
+                        backgroundColor: CustomColors.backgroundColors,
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.person),
+                        label: isLoggedIn() ? 'Me' : 'Login',
+                        backgroundColor: CustomColors.backgroundColors,
+                      ),
+                    ],
+                    currentIndex: _selectedIndex,
+                    unselectedItemColor: const Color(0xff9A9A9A),
+                    selectedItemColor: Colors.white,
+                    onTap: (index) =>
+                        _onItemTapped(index, authProvider, postProvider),
+                  ),
+                ))));
   }
 }

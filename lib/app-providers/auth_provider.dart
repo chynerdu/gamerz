@@ -2,6 +2,8 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:gamerz/data-models.dart/searchUserModel.dart'
+    as searchUserModel;
 import 'package:provider/provider.dart';
 
 import '../data-models.dart/login.dart';
@@ -9,12 +11,13 @@ import '../data-models.dart/postModel.dart';
 import '../data-models.dart/register.dart';
 import '../service/config.dart';
 import '../data-models.dart/userModel.dart' as userDataModel;
+import '../data-models.dart/followersModel.dart' as followersModel;
 import '../service/http-services.dart';
 import 'main_provider.dart';
 import 'post_provider.dart';
 
 class UserAuthProvider with ChangeNotifier {
-  String _message = 'From Provider';
+  final String _message = 'From Provider';
   final String baseUrl = Config.baseUrl;
   HTTPInstances hTTPInstances = HTTPInstances();
 
@@ -22,9 +25,29 @@ class UserAuthProvider with ChangeNotifier {
   userDataModel.Data _otherUserData = userDataModel.Data();
 
   bool _isLoadingAuth = true;
+  bool _isFollowing = false;
+  bool _isLoadingFollowers = false;
+  bool _isLoadingFollowing = false;
+  bool _isSearchingUser = false;
+  List<followersModel.Data> _followerlist = [];
+  List<followersModel.Data> _followinglist = [];
+  searchUserModel.Result _searchUserList =
+      searchUserModel.Result(data: [], meta: MetaInfo());
 
   userDataModel.Data get userData {
     return _userData;
+  }
+
+  List<followersModel.Data> get followerlist {
+    return List.from(_followerlist);
+  }
+
+  List<followersModel.Data> get followinglist {
+    return List.from(_followinglist);
+  }
+
+  searchUserModel.Result get searchUserList {
+    return _searchUserList;
   }
 
   userDataModel.Data get otherUserData {
@@ -33,6 +56,22 @@ class UserAuthProvider with ChangeNotifier {
 
   bool get isLoadingAuth {
     return _isLoadingAuth;
+  }
+
+  bool get isFollowing {
+    return _isFollowing;
+  }
+
+  bool get isLoadingFollowers {
+    return _isLoadingFollowers;
+  }
+
+  bool get isLoadingFollowing {
+    return _isLoadingFollowing;
+  }
+
+  bool get isSearchingUser {
+    return _isSearchingUser;
   }
 
   var headers = {
@@ -249,6 +288,135 @@ class UserAuthProvider with ChangeNotifier {
       SmartDialog.showToast(error as String,
           displayTime: const Duration(seconds: 3));
       rethrow;
+    }
+  }
+
+  Future<void> getFollowers() async {
+    try {
+      // Show loading state on initial load
+      if (_followerlist.isEmpty) {
+        _isLoadingFollowers = true;
+        notifyListeners();
+      }
+      // Determine the appropriate URL and headers based on token presence
+      final token = await localStorage.getData(name: 'token');
+      const url = 'followers/followers';
+
+      headers['Authorization'] = "Bearer $token";
+
+      // Fetch posts
+      dynamic decodedData = await hTTPInstances.httpGet(url);
+
+      final serialized =
+          followersModel.FollowersModel.fromJson(decodedData['result']);
+
+      // Update state with the fetched posts
+      _followerlist = serialized.data ?? [];
+      _isLoadingFollowers = false;
+      notifyListeners();
+    } catch (error) {
+      print('Error occurred fetching followers: $error');
+      _isLoadingFollowers = false;
+      notifyListeners();
+      rethrow; // rethrow the error to be handled further up the call stack if needed
+    }
+  }
+
+  Future<void> followUnfollow({id}) async {
+    try {
+      // Show loading state on initial load
+
+      // Determine the appropriate URL and headers based on token presence
+      final token = await localStorage.getData(name: 'token');
+      String url = 'followers/$id/follow';
+
+      headers['Authorization'] = "Bearer $token";
+
+      // Fetch posts
+      await hTTPInstances.httpGet(url);
+      await getOtherUserProfie(id);
+
+      _isFollowing = false;
+      notifyListeners();
+    } catch (error) {
+      print('Error occurred following d: $error');
+      _isFollowing = false;
+      notifyListeners();
+      rethrow; // rethrow the error to be handled further up the call stack if needed
+    }
+  }
+
+  Future<void> getFollowing() async {
+    try {
+      // Show loading state on initial load
+      if (_followinglist.isEmpty) {
+        _isLoadingFollowing = true;
+        notifyListeners();
+      }
+      // Determine the appropriate URL and headers based on token presence
+      final token = await localStorage.getData(name: 'token');
+      const url = 'followers/following';
+
+      headers['Authorization'] = "Bearer $token";
+
+      // Fetch posts
+      dynamic decodedData = await hTTPInstances.httpGet(url);
+
+      final serialized =
+          followersModel.FollowersModel.fromJson(decodedData['result']);
+
+      // Update state with the fetched posts
+      _followinglist = serialized.data ?? [];
+      _isLoadingFollowing = false;
+      notifyListeners();
+    } catch (error) {
+      print('Error occurred fetching following: $error');
+      _isLoadingFollowing = false;
+      notifyListeners();
+      rethrow; // rethrow the error to be handled further up the call stack if needed
+    }
+  }
+
+  Future<void> searchuser({int page = 1, searchQuery = ''}) async {
+    try {
+      // Show loading state on initial load
+      _isSearchingUser = true;
+
+      if (page == 1) {
+        //  reset state on first search
+        _searchUserList = searchUserModel.Result(data: [], meta: MetaInfo());
+      }
+      notifyListeners();
+      // Determine the appropriate URL and headers based on token presence
+      final token = await localStorage.getData(name: 'token');
+      String url = 'auth/searchUsers?page=$page&searchQuery=$searchQuery';
+
+      headers['Authorization'] = "Bearer $token";
+
+      // Fetch posts
+      dynamic decodedData = await hTTPInstances.httpGet(url);
+
+      final serialized = searchUserModel.Result.fromJson(decodedData['result']);
+      // Update state with the fetched posts
+      if (page > 1) {
+        if (serialized.data!.isNotEmpty) {
+          List<searchUserModel.Data> newList = serialized.data ?? [];
+          List<searchUserModel.Data> initList = _searchUserList.data ?? [];
+          List<searchUserModel.Data> updatedData = initList + newList;
+          _searchUserList =
+              searchUserModel.Result(data: updatedData, meta: serialized.meta);
+        }
+      } else {
+        _searchUserList = serialized;
+      }
+
+      _isSearchingUser = false;
+
+      notifyListeners();
+    } catch (error) {
+      _isSearchingUser = false;
+      notifyListeners();
+      rethrow; // rethrow the error to be handled further up the call stack if needed
     }
   }
 

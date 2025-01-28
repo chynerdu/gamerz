@@ -67,22 +67,23 @@ class HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            widget.isLoggedIn
-                ? Container(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: AvatarBig(
-                      isNetwork: authProvider.userData.profileImage != null
-                          ? true
-                          : false,
-                      img: authProvider.userData.profileImage ??
-                          "assets/icons/image1.png",
-                    ))
-                : const SizedBox.shrink(),
-            const Text('𝖦𝖺𝗆𝖾𝗋𝗓 𝖹𝗈𝗇𝖾',
-                style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: Color.fromARGB(255, 250, 56, 121))),
+            // widget.isLoggedIn
+            //     ? Container(
+            //         padding: const EdgeInsets.only(right: 12),
+            //         child: AvatarBig(
+            //           isNetwork: authProvider.userData.profileImage != null
+            //               ? true
+            //               : false,
+            //           img: authProvider.userData.profileImage ??
+            //               "assets/icons/image1.png",
+            //         ))
+            //     : const SizedBox.shrink(),
+            Image.asset("assets/icons/xporb/xporb-logo.png",
+                width: MediaQuery.of(context).size.width * 0.25
+                // width: 300,
+                ),
           ],
         ),
         actions: <Widget>[

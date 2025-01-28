@@ -49,6 +49,8 @@ class Data {
   dynamic followers;
   dynamic username;
   dynamic following;
+  bool? followingUser;
+  bool? userFollowing;
   dynamic profileImage;
   int? iV;
 
@@ -66,6 +68,8 @@ class Data {
       this.createdAt,
       this.username,
       this.followers,
+      this.followingUser,
+      this.userFollowing,
       this.following,
       this.profileImage,
       this.iV});
@@ -86,6 +90,8 @@ class Data {
     username = json['username'];
     createdAt = json['createdAt'];
     followers = json['followers'];
+    followingUser = json['following_user'] ?? false;
+    userFollowing = json['user_following'] ?? false;
     following = json['following'];
     iV = json['__v'];
   }
@@ -109,6 +115,8 @@ class Data {
     data['username'] = username;
     data['followers'] = followers;
     data['following'] = following;
+    data['following_user'] = followingUser;
+    data['user_following'] = userFollowing;
     data['__v'] = iV;
     return data;
   }

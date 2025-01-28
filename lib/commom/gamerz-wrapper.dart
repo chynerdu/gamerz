@@ -7,6 +7,7 @@ class GamerzWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(padding: const EdgeInsets.all(15), child: child);
+    return Container(
+        padding: const EdgeInsets.fromLTRB(15, 15, 15, 0), child: child);
   }
 }

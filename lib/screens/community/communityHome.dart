@@ -1,16 +1,17 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:gamerz/app-providers/auth_provider.dart';
 import 'package:gamerz/commom/avatar.dart';
-import 'package:gamerz/helpers/customColors.dart';
+import 'package:gamerz/screens/community/for-you/search-list.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+
 import 'package:provider/provider.dart';
 
 import '../../app-providers/games.provider.dart';
 import '../../app-providers/post_provider.dart';
 import '../../commom/gamerz-wrapper.dart';
 import '../../commom/ui/gamerzTextButton.dart';
-import '../../service/local-storage.dart';
 import '../../service/socket-connection.dart';
 import '../authentication/login.dart';
 import 'for-you/feed.dart';
@@ -106,7 +107,17 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    print(MediaQuery.of(context).size.width);
     final postProvider = Provider.of<PostProvider>(context);
+    final authprovider = Provider.of<UserAuthProvider>(context);
+
+    void searchUsers() {
+      showCupertinoModalBottomSheet(
+        context: context,
+        builder: (context) => SearchList(authProvider: authprovider),
+      );
+    }
+
     return Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
@@ -116,19 +127,30 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
             children: [
               widget.isLoggedIn
                   ? Container(
-                      child: AvatarBig(
-                      isNetwork:
-                          widget.authProvider.userData.profileImage != null
-                              ? true
-                              : false,
-                      img: widget.authProvider.userData.profileImage ??
-                          "assets/icons/image1.png",
-                    ))
-                  : const SizedBox.shrink(),
-              const Text('𝖦𝖺𝗆𝖾𝗋𝗓 𝖹𝗈𝗇𝖾',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: Color.fromARGB(255, 250, 56, 121))),
+                      width: MediaQuery.of(context).size.width * 0.11,
+                      child: Center(
+                          child: Container(
+                              width: 30,
+                              height: 30,
+                              child: AvatarBig(
+                                isNetwork:
+                                    widget.authProvider.userData.profileImage !=
+                                            null
+                                        ? true
+                                        : false,
+                                img:
+                                    widget.authProvider.userData.profileImage ??
+                                        "assets/icons/image1.png",
+                              ))))
+                  : SizedBox(width: MediaQuery.of(context).size.width * 0.11),
+              Image.asset("assets/icons/xporb/xporb-logo.png",
+                  width: MediaQuery.of(context).size.width * 0.25
+                  // width: 300,
+                  ),
+              // Text('𝖦𝖺𝗆𝖾𝗋𝗓 𝖹𝗈𝗇𝖾',
+              //     style: TextStyle(
+              //         fontWeight: FontWeight.w800,
+              //         color: Color.fromARGB(255, 250, 56, 121))),
               !widget.isLoggedIn
                   ? Container(
                       width: MediaQuery.of(context).size.width * 0.11,
@@ -139,7 +161,12 @@ class CommunityHomeScreenState extends State<CommunityHomeScreen>
                             onPressed: () => Navigator.push(context,
                                 MaterialPageRoute(builder: (_) => Login())),
                           )))
-                  : SizedBox(width: MediaQuery.of(context).size.width * 0.11)
+                  : SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.11,
+                      child: TextButton(
+                          onPressed: () => searchUsers(),
+                          child: const Icon(Icons.search,
+                              size: 30, color: Colors.white)))
             ],
           ),
           bottom: TabBar(

@@ -4,16 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:gamerz/commom/custom-colors.dart';
 import 'package:gamerz/commom/theming.dart';
 import 'package:gamerz/commom/ui/shimmers.dart';
 import 'package:gamerz/data-models.dart/games.dart' as Games;
-import 'package:gamerz/helpers/customColors.dart';
 import 'package:gamerz/screens/single-gamerz-post.dart';
-
 import 'package:provider/provider.dart';
-
 import '../app-providers/games.provider.dart';
-import '../data-models.dart/game-images.dart';
 import '../theme-data.dart';
 import 'all-games.dart';
 import 'all-genres.dart';
@@ -184,7 +181,7 @@ class PopularState extends State<Popular> {
           separatorBuilder: (context, index) => Divider(
                 height: 40,
                 thickness: 2,
-                color: CustomColors.PrimaryColor.withOpacity(0.15),
+                color: CustomColors.primaryColor.withOpacity(0.15),
               ),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -224,7 +221,7 @@ class PopularState extends State<Popular> {
                                           style: GamerzTheme.postHeader),
                                       const SizedBox(height: 10),
                                       HtmlWidget(
-                                          '${game.about.substring(0, 500)}',
+                                          '${game.about.substring(0, 155)}',
                                           textStyle: GamerzTheme.postStyle
                                               .copyWith(color: Colors.white70)),
                                       // Text('${game.about}',
@@ -335,18 +332,20 @@ class PopularState extends State<Popular> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AllGamesProvider>(context, listen: false);
-    return provider.isLoading
-        ? const SizedBox(
-            height: 40,
-            width: 40,
-            child: SpinKitRipple(color: Color(0xffE91E63)))
-        : hasError
-            ? const Construction()
-            : provider.allGames.isEmpty
-                ? const Center(child: Text('Nothing to show yet'))
-                : Container(
-                    padding: const EdgeInsets.only(left: 10, right: 10),
-                    child: buildBody(provider));
+    return Container(
+        padding: EdgeInsets.only(top: 10),
+        child: provider.isLoading
+            ? const SizedBox(
+                height: 40,
+                width: 40,
+                child: SpinKitRipple(color: Color(0xffE91E63)))
+            : hasError
+                ? const Construction()
+                : provider.allGames.isEmpty
+                    ? const Center(child: Text('Nothing to show yet'))
+                    : Container(
+                        padding: const EdgeInsets.only(left: 10, right: 10),
+                        child: buildBody(provider)));
   }
 }
 

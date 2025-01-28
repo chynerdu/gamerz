@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamerz/shared/post-container.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:provider/provider.dart';
 import '../../../app-providers/post_provider.dart';
@@ -28,6 +29,7 @@ class PostsILiked extends StatelessWidget {
                 itemBuilder: ((BuildContext context, index) {
                   postData.Data post = postProvider.postLiked[index];
                   return PostContainer(
+                    postType: PostType.main,
                     id: post.sId as String,
                     content: "${post.message}",
                     commentCounts: post.comments as int,

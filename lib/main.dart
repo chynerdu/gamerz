@@ -1,9 +1,13 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'app-providers/auth_provider.dart';
 import 'app-providers/games.provider.dart';
@@ -134,6 +138,22 @@ class _MyAppState extends State<MyApp> {
             event.data['userId'] == authProvider.userData.sId) {
           print('disableNewPostAlert');
         }
+      } else if (event.data['type'] == 'gamerz_community_follow') {
+        if (event.data['image'] != null) {
+          final http.Response response =
+              await http.get(Uri.parse(event.data['image']));
+          Uint8List imageBytes = response.bodyBytes;
+          BigPictureStyleInformation bigPictureStyleInformation =
+              BigPictureStyleInformation(
+            ByteArrayAndroidBitmap.fromBase64String(base64Encode(imageBytes)),
+            largeIcon: ByteArrayAndroidBitmap.fromBase64String(
+                base64Encode(imageBytes)),
+          );
+
+          await callNotifificationWithImage(
+              event, channel, bigPictureStyleInformation);
+        } else
+          await callNotifification(event, channel);
       } else {
         await callNotifification(event, channel);
       }
@@ -176,18 +196,49 @@ class _MyAppState extends State<MyApp> {
           notification.body,
           NotificationDetails(
             android: AndroidNotificationDetails(
-              channel.id,
-              channel.name,
+              channel.id, channel.name,
               channelDescription: 'your channel description',
               priority: Priority.high,
               color: CustomColors.backgroundColors,
               ticker: 'ticker',
               // sound: RawResourceAndroidNotificationSound('evisit_tone'),
               playSound: true,
-
               icon: android.smallIcon,
+
               // other properties...
             ),
+          ));
+    } catch (e) {
+      print('error calling notification $e');
+    }
+  }
+
+  callNotifificationWithImage(
+      message, channel, bigPictureStyleInformation) async {
+    try {
+      RemoteNotification notification = message.notification;
+      AndroidNotification android = message.notification?.android;
+      // print('small icon  ${android.smallIcon}');
+      // If `onMessage` is triggered with a notification, construct our own
+      // local notification to show to users using the created channel.
+
+      flutterLocalNotificationsPlugin.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(channel.id, channel.name,
+                channelDescription: 'your channel description',
+                priority: Priority.high,
+                color: CustomColors.backgroundColors,
+                ticker: 'ticker',
+                // sound: RawResourceAndroidNotificationSound('evisit_tone'),
+                playSound: true,
+                icon: android.smallIcon,
+                // image
+                styleInformation: bigPictureStyleInformation
+                // other properties...
+                ),
           ));
     } catch (e) {
       print('error calling notification $e');
@@ -201,7 +252,7 @@ class _MyAppState extends State<MyApp> {
 
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Gamerz',
+      title: 'xpOrb',
       navigatorObservers: [FlutterSmartDialog.observer],
       builder: FlutterSmartDialog.init(),
       theme: ThemeData(

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gamerz/commom/custom-colors.dart';
+import 'package:gamerz/shared/post-container.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -17,18 +19,22 @@ import '../../app-providers/post_provider.dart';
 import '../../commom/avatar.dart';
 import '../../commom/gamerz-wrapper.dart';
 import '../../commom/theming.dart';
-import '../../commom/ui/gamerzRaisedButton.dart';
 import '../../commom/ui/shimmers.dart';
 import '../../data-models.dart/commentsModel.dart' as postComment;
-import '../../data-models.dart/postModel.dart';
 import '../../service/config.dart';
 import '../../service/local-storage.dart';
 import 'for-you/for-you.dart';
 
 class SinglePost extends StatefulWidget {
   PostBody body;
+  bool? openkeyboard;
+  bool isLoggedIn;
 
-  SinglePost({super.key, required this.body});
+  SinglePost(
+      {super.key,
+      required this.body,
+      required this.isLoggedIn,
+      this.openkeyboard = false});
 
   @override
   State<SinglePost> createState() => _SinglePostState();
@@ -37,12 +43,17 @@ class SinglePost extends StatefulWidget {
 class _SinglePostState extends State<SinglePost> {
   TextEditingController messageController = TextEditingController();
   LocalStorage localStorage = LocalStorage();
+  bool showSubmitButton = false;
+  FocusNode focusNode = FocusNode();
 
   @override
   void initState() {
     // WidgetsFlutterBinding.ensureInitialized();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       getData();
+      if (widget.openkeyboard == true) {
+        FocusScope.of(context).requestFocus(focusNode);
+      }
     });
 
     super.initState();
@@ -57,7 +68,7 @@ class _SinglePostState extends State<SinglePost> {
   submit(context) async {
     final postProvider = Provider.of<PostProvider>(context, listen: false);
     final authProvider = Provider.of<UserAuthProvider>(context, listen: false);
-    print('user ${authProvider.userData.firstName}');
+
     FocusScope.of(context).unfocus();
 
     try {
@@ -113,8 +124,6 @@ class _SinglePostState extends State<SinglePost> {
         setState(() {
           messageController.text = '';
         });
-        // getData();
-        // Navigator.pop(context);
       } else {
         SmartDialog.showToast(responseData.error ?? 'failed');
         return;
@@ -127,6 +136,8 @@ class _SinglePostState extends State<SinglePost> {
 
   Widget build(BuildContext context) {
     final postProvider = Provider.of<PostProvider>(context);
+    final authProvider = Provider.of<UserAuthProvider>(context);
+    // FocusManager.instance.primaryFocus?.focus();
     return GamerzWrapper(
         child: Scaffold(
             resizeToAvoidBottomInset: false,
@@ -147,119 +158,140 @@ class _SinglePostState extends State<SinglePost> {
             body: Column(
               children: [
                 Expanded(
-
-                    // width: MediaQuery.of(context).size.width * 0.8,
                     child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         child: Column(
-                  children: [
-                    PostContainer(
-                        id: widget.body.id,
-                        content: widget.body.content,
-                        commentCounts: widget.body.commentCounts,
-                        likes: widget.body.likes,
-                        author: widget.body.author,
-                        authorId: widget.body.authorId,
-                        authorAvatar: widget.body.authorAvatar,
-                        date: widget.body.date,
-                        image: widget.body.image,
-                        postProvider: postProvider),
-                    const SizedBox(height: 10),
-                    const Divider(
-                        thickness: 1, height: 0, color: Color(0xFF747474)),
-                    postProvider.isLoadingComments
-                        ? ShimmerShortList()
-                        : postProvider.allComments.isEmpty
-                            ? const Padding(
-                                padding: EdgeInsets.only(top: 40),
-                                child: Text("No comments yet",
-                                    style: TextStyle(color: (Colors.white))))
-                            : ListView.separated(
-                                physics: const NeverScrollableScrollPhysics(),
-                                reverse: true,
-                                shrinkWrap: true,
-                                itemCount: postProvider.allComments.length,
-                                separatorBuilder: (context, index) {
-                                  return const Divider(
-                                      thickness: 0.3,
-                                      height: 0,
-                                      color:
-                                          Color.fromARGB(255, 180, 180, 180));
-                                },
-                                itemBuilder: ((BuildContext context, index) {
-                                  postComment.CommentData userComments =
-                                      postProvider.allComments[index];
-                                  print(
-                                      'comments ${postProvider.allComments.length}');
-                                  return PostContainer(
-                                      showFollow: false,
-                                      id: userComments.sId as String,
-                                      content: "${userComments.message}",
-                                      commentCounts:
-                                          userComments.replies != null
-                                              ? userComments.replies as int
-                                              : 0,
-                                      likes: userComments.likes != null
-                                          ? userComments.likes as int
-                                          : 0,
-                                      author:
-                                          "${userComments.commenter![0].firstName}",
-                                      authorId: userComments.commenter![0].sId
-                                          as String,
-                                      authorAvatar:
-                                          "${userComments.commenter![0].profilePicture}",
-                                      date: Jiffy(userComments.updatedAt)
-                                          .fromNow(),
-                                      postProvider: postProvider);
-                                }),
-                              )
-                  ],
-                ))),
+                          children: [
+                            PostContainer(
+                                postType: PostType.single,
+                                isLoggedIn: widget.isLoggedIn,
+                                id: widget.body.id,
+                                content: widget.body.content,
+                                commentCounts: widget.body.commentCounts,
+                                likes: widget.body.likes,
+                                author: widget.body.author,
+                                authorId: widget.body.authorId,
+                                authorAvatar: widget.body.authorAvatar,
+                                date: widget.body.date,
+                                image: widget.body.image,
+                                postProvider: postProvider),
+                            const SizedBox(height: 10),
+                            const Divider(
+                                thickness: 1,
+                                height: 0,
+                                color: Color(0xFF747474)),
+                            postProvider.isLoadingComments
+                                ? ShimmerShortList()
+                                : postProvider.allComments.isEmpty
+                                    ? const Padding(
+                                        padding: EdgeInsets.only(top: 40),
+                                        child: Text("No comments yet",
+                                            style: TextStyle(
+                                                color: (Colors.white))))
+                                    : ListView.separated(
+                                        physics:
+                                            const NeverScrollableScrollPhysics(),
+                                        reverse: true,
+                                        shrinkWrap: true,
+                                        itemCount:
+                                            postProvider.allComments.length,
+                                        separatorBuilder: (context, index) {
+                                          return const Divider(
+                                              thickness: 0.3,
+                                              height: 0,
+                                              color: CustomColors.dividerColor);
+                                        },
+                                        itemBuilder:
+                                            ((BuildContext context, index) {
+                                          postComment.CommentData userComments =
+                                              postProvider.allComments[index];
+                                          return PostContainer(
+                                              postType: PostType.comments,
+                                              isLoggedIn: widget.isLoggedIn,
+                                              showFollow: false,
+                                              id: userComments.sId as String,
+                                              content:
+                                                  "${userComments.message}",
+                                              commentCounts:
+                                                  userComments.replies != null
+                                                      ? userComments.replies
+                                                          as int
+                                                      : 0,
+                                              likes: userComments.likes != null
+                                                  ? userComments.likes as int
+                                                  : 0,
+                                              author:
+                                                  "${userComments.commenter![0].firstName}",
+                                              authorId: userComments
+                                                  .commenter![0].sId as String,
+                                              authorAvatar:
+                                                  "${userComments.commenter![0].profilePicture}",
+                                              date:
+                                                  Jiffy(userComments.updatedAt)
+                                                      .fromNow(),
+                                              postProvider: postProvider);
+                                        }),
+                                      )
+                          ],
+                        ))),
                 Column(children: [
-                  Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 16),
-                      decoration: BoxDecoration(
-                          color: const Color(0xff313132),
-                          border: Border.all(
-                              color: const Color(0xFF747474), width: 1),
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              const AvatarSmall(
-                                img: "assets/icons/image1.png",
-                              ),
-                              const SizedBox(width: 26),
-                              Text('reply to @${widget.body.author}',
-                                  style: const TextStyle(color: Colors.white)),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    children: [
+                      // Input
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 7),
+                          decoration: BoxDecoration(
+                              color: Color.fromARGB(255, 35, 35, 35),
+                              borderRadius: BorderRadius.circular(8)),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Container(
-                              //     child: const Icon(
-                              //   Icons.image,
-                              //   size: 24,
-                              //   color: Colors.white,
-                              // )),
+                              Container(
+                                  width: 25,
+                                  height: 25,
+                                  child: AvatarBig(
+                                    isNetwork:
+                                        authProvider.userData.profileImage !=
+                                                null
+                                            ? true
+                                            : false,
+                                    img: authProvider.userData.profileImage ??
+                                        "assets/icons/image1.png",
+                                  )),
                               Expanded(
                                   child: TextFormField(
+                                onChanged: (String value) => {
+                                  if (messageController.text.isNotEmpty)
+                                    {
+                                      setState(() {
+                                        showSubmitButton = true;
+                                      })
+                                    }
+                                  else
+                                    setState(() {
+                                      showSubmitButton = false;
+                                    })
+                                },
                                 controller: messageController,
+                                textInputAction: TextInputAction.newline,
+                                focusNode: focusNode,
                                 style: const TextStyle(
-                                    fontSize: 16, color: Color(0xFFFFFFFF)),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFFFFFFFF)),
                                 decoration: InputDecoration(
                                   isDense: true,
-                                  hintText: "Start typing",
+                                  hintText: "Reply to ${widget.body.author}",
                                   hintStyle: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w400,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
                                       color: Color(0xff989898)),
                                   contentPadding:
-                                      const EdgeInsets.only(left: 16),
+                                      const EdgeInsets.only(left: 16, top: 10),
                                   border: OutlineInputBorder(
                                     borderSide: BorderSide.none,
                                     borderRadius: BorderRadius.circular(20),
@@ -268,16 +300,32 @@ class _SinglePostState extends State<SinglePost> {
                               ))
                             ],
                           ),
-                          // text
-                        ],
-                      )),
-                  const SizedBox(height: 16),
-                  GamerzElevatedButtonSmall(
-                    label: "Reply",
-                    onPressed: () => submit(context),
+                        ),
+                      ),
+                      Visibility(
+                          visible: showSubmitButton,
+                          maintainAnimation: true,
+                          maintainState: true,
+                          child: AnimatedOpacity(
+                              duration: const Duration(milliseconds: 700),
+                              curve: Curves.linear,
+                              opacity: showSubmitButton ? 1 : 0,
+                              child: GestureDetector(
+                                  onTap: () => submit(context),
+                                  child: Container(
+                                      width: 30,
+                                      height: 30,
+                                      padding: EdgeInsets.all(5),
+                                      margin:
+                                          EdgeInsets.symmetric(horizontal: 5),
+                                      decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(50)),
+                                      child: Icon(Icons.send_rounded)))))
+                    ],
                   ),
                   Padding(
-                      // this is new
                       padding: EdgeInsets.only(
                           bottom: MediaQuery.of(context).viewInsets.bottom)),
                 ])

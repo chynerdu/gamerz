@@ -53,7 +53,10 @@ class GamerzTheme {
   static const usernameStyle = TextStyle(
       fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFFBDBDBD));
   static const followerCount = TextStyle(
-      fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF999999));
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: Color.fromARGB(125, 213, 213, 213),
+  );
 
   static const searchUsername = TextStyle(
       fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFFFFFFFF));

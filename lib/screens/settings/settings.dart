@@ -2,9 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_switch/flutter_switch.dart';
+import 'package:gamerz/commom/custom-colors.dart';
 import 'package:provider/provider.dart';
 import '../../app-providers/auth_provider.dart';
-import '../../helpers/customColors.dart';
 import '../../service/local-storage.dart';
 import '../authentication/login.dart';
 
@@ -75,7 +75,7 @@ class SettingsState extends State<Setting> {
                 TextButton(
                   child: const Text(
                     'No',
-                    style: TextStyle(color: CustomColors.PrimaryColor),
+                    style: TextStyle(color: CustomColors.primaryColor),
                   ),
                   onPressed: () {
                     Navigator.of(context).pop(false);
@@ -163,7 +163,7 @@ class SettingsState extends State<Setting> {
                         ),
                         FlutterSwitch(
                           disabled: true,
-                          activeColor: CustomColors.PrimaryColor,
+                          activeColor: CustomColors.primaryColor,
                           valueFontSize: 13.0,
                           toggleSize: 18.0,
                           value: disableNewPostAlert,
@@ -194,7 +194,7 @@ class SettingsState extends State<Setting> {
                           ),
                         ),
                         FlutterSwitch(
-                          activeColor: CustomColors.PrimaryColor,
+                          activeColor: CustomColors.primaryColor,
                           valueFontSize: 13.0,
                           toggleSize: 18.0,
                           value: newGamerzPost,
@@ -230,7 +230,7 @@ class SettingsState extends State<Setting> {
                                 child: const Text("Logout",
                                     style: TextStyle(
                                       fontSize: 17,
-                                      color: CustomColors.PrimaryColor,
+                                      color: CustomColors.primaryColor,
                                       fontWeight: FontWeight.w500,
                                     ))))))
               ]),

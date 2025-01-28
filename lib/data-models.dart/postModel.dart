@@ -279,23 +279,23 @@ class Media {
   }
 }
 
-class Meta {
-  Meta? meta;
+// class Meta {
+//   Meta? meta;
 
-  Meta({this.meta});
+//   Meta({this.meta});
 
-  Meta.fromJson(Map<String, dynamic> json) {
-    meta = json['meta'] != null ? new Meta.fromJson(json['meta']) : null;
-  }
+//   Meta.fromJson(Map<String, dynamic> json) {
+//     meta = json['meta'] != null ? new Meta.fromJson(json['meta']) : null;
+//   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.meta != null) {
-      data['meta'] = this.meta!.toJson();
-    }
-    return data;
-  }
-}
+//   Map<String, dynamic> toJson() {
+//     final Map<String, dynamic> data = new Map<String, dynamic>();
+//     if (this.meta != null) {
+//       data['meta'] = this.meta!.toJson();
+//     }
+//     return data;
+//   }
+// }
 
 class MetaInfo {
   int? page;

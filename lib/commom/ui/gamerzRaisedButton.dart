@@ -97,6 +97,7 @@ class GamerzElevatedButtonSmall extends StatelessWidget {
         child: ElevatedButton(
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.all(0),
               backgroundColor: buttonColor ?? Colors.white,
               elevation: 4,
               shape: RoundedRectangleBorder(

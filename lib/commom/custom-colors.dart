@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class CustomColors {
-  static const Color backgroundColors = Color(0xFF0F0608);
+  static const Color backgroundColors = Colors.black;
   static const Color primaryColor = const Color(0xffE91E63);
+  static const Color dividerColor = Color.fromARGB(82, 115, 115, 115);
+  static const Color inputBackgroundColor = Color.fromARGB(255, 26, 26, 26);
 }

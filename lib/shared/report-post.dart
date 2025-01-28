@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:gamerz/commom/custom-colors.dart';
 import 'package:provider/provider.dart';
-
 import '../app-providers/post_provider.dart';
 import '../commom/gamerz-wrapper.dart';
 import '../commom/ui/gamerzRaisedButton.dart';
-import '../helpers/customColors.dart';
 import '../helpers/snackbars.dart';
 
 class ReportPostPrompt extends StatefulWidget {
@@ -63,7 +62,7 @@ class ReportPostPromptState extends State<ReportPostPrompt> {
             TextButton(
               child: const Text(
                 'Close',
-                style: TextStyle(color: CustomColors.PrimaryColor),
+                style: TextStyle(color: CustomColors.primaryColor),
               ),
               onPressed: () => Navigator.pop(context),
             )
@@ -76,15 +75,15 @@ class ReportPostPromptState extends State<ReportPostPrompt> {
             const SizedBox(height: 20),
             SizedBox(
                 width: MediaQuery.of(context).size.width * 0.85,
-                child: const Text('Report this post',
-                    style: TextStyle(fontSize: 20))),
+                child:
+                    const Text('Report Post', style: TextStyle(fontSize: 20))),
             const SizedBox(height: 20),
-            const Text('I am reporting the post because:',
+            const Text('I am reporting this post because:',
                 textAlign: TextAlign.center, style: TextStyle(fontSize: 16)),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               RadioListTile<String>(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 0),
-                title: const Text("It makes me uncomfortable"),
+                title: const Text("This post makes me uncomfortable."),
                 value: "uncomfortable",
                 groupValue: _selectedOption,
                 onChanged: (value) {
@@ -97,7 +96,7 @@ class ReportPostPromptState extends State<ReportPostPrompt> {
               ),
               RadioListTile<String>(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 0),
-                title: const Text("It promotes violence"),
+                title: const Text("This post promotes violence."),
                 value: "violence",
                 groupValue: _selectedOption,
                 onChanged: (value) {
@@ -110,7 +109,8 @@ class ReportPostPromptState extends State<ReportPostPrompt> {
               ),
               RadioListTile<String>(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 0),
-                title: const Text("It's inappropriate"),
+                title: const Text(
+                    "This post contains nudity and or offensive words."),
                 value: "inappropriate",
                 groupValue: _selectedOption,
                 onChanged: (value) {
@@ -123,7 +123,7 @@ class ReportPostPromptState extends State<ReportPostPrompt> {
               ),
               RadioListTile<String>(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 0),
-                title: const Text("Others"),
+                title: const Text("Other reasons"),
                 value: "others",
                 groupValue: _selectedOption,
                 onChanged: (value) {
